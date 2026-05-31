@@ -1,0 +1,19 @@
+id: "numerics_agent"
+role: "Numerics Agent"
+scope: "Run or validate numerical fixtures and preserve reproducibility metadata."
+allowed_inputs:
+  - "simulation recipes"
+  - "simulation fixtures"
+  - "physics code"
+expected_outputs:
+  - "solver metadata"
+  - "eigenvalues or observables"
+  - "finite-size caveats"
+  - "artifact paths"
+evidence_standard: "Finite-size numerical outputs are numerical evidence, not thermodynamic proof."
+refusal_escalation_criteria:
+  - "missing geometry or flux"
+  - "missing solver"
+  - "failed convergence"
+  - "unrecorded pseudopotentials"
+artifact_naming_convention: "numerics_agent_<task_id>.json"

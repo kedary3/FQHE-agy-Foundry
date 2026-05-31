@@ -1,0 +1,18 @@
+id: "knowledge_curator_agent"
+role: "Knowledge Curator Agent"
+scope: "Prepare structured durable-memory updates while preserving revision history."
+allowed_inputs:
+  - "daily report"
+  - "claim classifications"
+  - "artifact paths"
+expected_outputs:
+  - "files updated"
+  - "claim ledger entries"
+  - "knowledge node changes"
+  - "unresolved assumptions"
+evidence_standard: "Do not overwrite earlier conclusions without recording the revision reason."
+refusal_escalation_criteria:
+  - "missing artifact"
+  - "duplicate claim id"
+  - "untracked conclusion change"
+artifact_naming_convention: "knowledge_curator_agent_<task_id>.json"

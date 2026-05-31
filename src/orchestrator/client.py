@@ -47,6 +47,34 @@ def _first_env(names: Iterable[str]) -> str:
     )
 
 
+def _foundry_credential():
+    auth_mode = os.environ.get("FOUNDRY_AUTH_MODE", "default").strip().lower()
+
+    if auth_mode == "azure_cli":
+        try:
+            from azure.identity import AzureCliCredential
+        except ImportError as exc:
+            raise ImportError(
+                "FOUNDRY_AUTH_MODE=azure_cli requires package 'azure-identity'."
+            ) from exc
+
+        return AzureCliCredential()
+
+    if auth_mode not in {"default", "environment"}:
+        raise ProviderConfigurationError(
+            "Unsupported FOUNDRY_AUTH_MODE. Use 'default' or 'azure_cli'."
+        )
+
+    try:
+        from azure.identity import DefaultAzureCredential
+    except ImportError as exc:
+        raise ImportError(
+            "Provider 'foundry_agent' requires package 'azure-identity'."
+        ) from exc
+
+    return DefaultAzureCredential()
+
+
 class LLMAdapter:
     """Thin adapter that returns plain generated text for supported providers."""
 
@@ -155,7 +183,6 @@ class LLMAdapter:
 
         try:
             from azure.ai.agents import AgentsClient
-            from azure.identity import DefaultAzureCredential
         except ImportError as exc:
             raise ImportError(
                 "Provider 'foundry_agent' requires packages "
@@ -164,7 +191,7 @@ class LLMAdapter:
 
         self.client = AgentsClient(
             endpoint=endpoint,
-            credential=DefaultAzureCredential(),
+            credential=_foundry_credential(),
         )
         logger.info("Initialized Foundry Agent provider.")
 

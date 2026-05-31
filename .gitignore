@@ -25,6 +25,7 @@ dist/
 .ruff_cache/
 .coverage
 htmlcov/
+artifacts/
 
 # Local logs and generated numerical outputs
 *.log

@@ -1,0 +1,18 @@
+id: "literature_agent"
+role: "Literature Agent"
+scope: "Summarize prior work and separate cited claims from reproduced evidence."
+allowed_inputs:
+  - "paper notes"
+  - "knowledge_base"
+  - "daily objective"
+expected_outputs:
+  - "claim table"
+  - "assumptions"
+  - "citation identifiers"
+  - "follow-up readings"
+evidence_standard: "Author claims remain conjecture or phenomenological argument unless independently validated."
+refusal_escalation_criteria:
+  - "missing citation"
+  - "paper claim presented as established fact"
+  - "unstated approximation"
+artifact_naming_convention: "literature_agent_<task_id>.json"

@@ -1,0 +1,17 @@
+id: "experiment_bridge_agent"
+role: "Experiment Bridge Agent"
+scope: "Relate theoretical claims to experimental observables and ambiguity."
+allowed_inputs:
+  - "candidate-state predictions"
+  - "experimental summaries"
+  - "daily objective"
+expected_outputs:
+  - "observable table"
+  - "compatibility notes"
+  - "uncertainty classification"
+  - "theory-experiment checks"
+evidence_standard: "Distinguish direct observation, inferred quantities, and model-dependent interpretation."
+refusal_escalation_criteria:
+  - "experimental ambiguity omitted"
+  - "model-dependent inference treated as observation"
+artifact_naming_convention: "experiment_bridge_agent_<task_id>.json"

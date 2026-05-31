@@ -1,0 +1,20 @@
+id: "director_pi"
+role: "Director / Principal Investigator"
+scope: "Coordinate the daily research loop and enforce evidence standards."
+allowed_inputs:
+  - "agent configs"
+  - "knowledge graph summaries"
+  - "simulation fixtures"
+  - "subagent outputs"
+expected_outputs:
+  - "daily task graph"
+  - "claim classification"
+  - "scientific status summary"
+  - "next-loop recommendations"
+evidence_standard: "Every accepted claim must use an allowed evidence label and state support plus limitations."
+refusal_escalation_criteria:
+  - "missing evidence label"
+  - "unsupported claim"
+  - "malformed subagent output"
+  - "production configuration failure"
+artifact_naming_convention: "director_pi_<run_id>.json"

@@ -9,6 +9,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from .client import LLMAdapter
+from .daily_loop import DailyLoopError, DailyLoopRunner
 from .engine import ResearchDepartmentEngine
 from ..physics.runner import execute_simulation_recipe
 
@@ -41,6 +42,15 @@ def main() -> None:
         "--dry-run",
         action="store_true",
         help="Simulate the multi-agent execution loop without making API calls or commits.",
+    )
+    parser.add_argument(
+        "--mode",
+        choices=("test", "production"),
+        default=None,
+        help=(
+            "Run the Director-controlled daily loop in explicit test or production mode. "
+            "Omit this to use the legacy engine path."
+        ),
     )
     parser.add_argument(
         "--recipe",
@@ -88,13 +98,27 @@ def main() -> None:
             sys.exit(1)
         return
 
-    try:
-        engine = ResearchDepartmentEngine()
-    except Exception as exc:
-        logger.error("Failed to initialize Research Department Engine: %s", exc)
-        sys.exit(1)
-
     if args.run:
+        if args.mode:
+            try:
+                summary = DailyLoopRunner(mode=args.mode).run()
+            except DailyLoopError as exc:
+                logger.error("Daily loop failed: %s", exc)
+                sys.exit(1)
+            except Exception as exc:
+                logger.error("Daily loop could not start: %s", exc)
+                sys.exit(1)
+
+            logger.info("Daily loop finished with status: %s", summary["status"])
+            logger.info("Run summary: %s", summary["artifacts"][-1])
+            return
+
+        try:
+            engine = ResearchDepartmentEngine()
+        except Exception as exc:
+            logger.error("Failed to initialize Research Department Engine: %s", exc)
+            sys.exit(1)
+
         results = engine.run_daily_cycle(dry_run=args.dry_run)
         logger.info("Daily cycle finished with status: %s", results["status"])
 
@@ -107,6 +131,12 @@ def main() -> None:
             )
 
     elif args.recipe:
+        try:
+            engine = ResearchDepartmentEngine()
+        except Exception as exc:
+            logger.error("Failed to initialize Research Department Engine: %s", exc)
+            sys.exit(1)
+
         try:
             logger.info("Running declarative simulation: %s", args.recipe)
             results = execute_simulation_recipe(
@@ -127,6 +157,12 @@ def main() -> None:
             sys.exit(1)
 
     elif args.sync_graph:
+        try:
+            engine = ResearchDepartmentEngine()
+        except Exception as exc:
+            logger.error("Failed to initialize Research Department Engine: %s", exc)
+            sys.exit(1)
+
         engine.kg.build_graph()
         unresolved = engine.kg.get_unresolved_contradictions()
 
