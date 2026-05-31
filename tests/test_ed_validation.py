@@ -46,3 +46,15 @@ def test_laughlin_ground_state():
     # The ground state energy must be exactly 0 (within machine precision)
     # because Laughlin is the exact zero-energy density state of the V1 interaction.
     assert evals[0] == pytest.approx(0.0, abs=1e-10)
+
+
+def test_hamiltonian_is_hermitian():
+    """The assembled two-body Hamiltonian must be Hermitian in the Lz basis."""
+    geom = SphereGeometry(n_particles=3, n_flux=6)
+    geom.build_basis(target_lz=0.0)
+
+    ham = build_hamiltonian(geom, {1: 1.0})
+    diff = ham - ham.getH()
+    max_abs = 0.0 if diff.nnz == 0 else np.max(np.abs(diff.data))
+
+    assert max_abs == pytest.approx(0.0, abs=1e-12)

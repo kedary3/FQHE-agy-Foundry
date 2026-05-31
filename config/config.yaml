@@ -8,8 +8,22 @@ models:
   reproducer: "gemini-1.5-flash"
   referee: "gemini-1.5-pro"
 
+provider_routing:
+  default: "gemini"
+  managed_orchestration: "foundry_agent"
+  azure_openai_direct: "azure_openai"
+  local_execution: "local_cli"
+  examples:
+    literature: "foundry_agent"
+    referee: "foundry_agent"
+    coordinator: "foundry_agent"
+    exact_diagonalization: "local_cli"
+
 paths:
   knowledge_base: "knowledge_base"
   simulations: "simulations"
   recipes: "simulations/recipes"
   results: "simulations/results"
+
+orchestration:
+  max_daily_delegations: 3
