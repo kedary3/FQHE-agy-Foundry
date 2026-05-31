@@ -1,0 +1,14 @@
+id: P-CF
+name: "Composite Fermion Descriptions"
+description: >
+  Studies alternative pairing mechanisms and microscopic constructions formulated
+  within the composite fermion framework, including composite fermions in higher Landau levels.
+core_hypotheses:
+  - H-004 # Composite Fermion Pairing
+active_questions:
+  - "Can the 5/2 state be described as a p-wave pairing of composite fermions at effective filling factor n* = 1?"
+  - "What are the exact projection matrix elements for composite fermions in the second Landau level?"
+key_benchmarks:
+  - "benchmark_cf_energy_sphere_n12"
+assigned_division: "Analytical Division"
+---

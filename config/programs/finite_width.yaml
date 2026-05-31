@@ -1,0 +1,16 @@
+id: P-FW
+name: "Finite-Width Effects"
+description: >
+  Studies the modification of the Coulomb interaction potential at short ranges
+  due to the finite thickness of the two-dimensional electron gas (2DEG) layer,
+  typically modeled via Fang-Howard or infinite-well wavefunctions.
+core_hypotheses:
+  - H-001 # AP State Dominance
+  - H-003 # Pfaffian State stabilization via width
+active_questions:
+  - "Does finite quantum well width suppress the short-range three-body repulsion?"
+  - "How does the optimal width parameter scale with system size in torus geometry?"
+key_benchmarks:
+  - "benchmark_finite_width_torus_n14"
+assigned_division: "Numerical Division"
+---

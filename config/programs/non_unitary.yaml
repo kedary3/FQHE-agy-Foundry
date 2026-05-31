@@ -1,0 +1,14 @@
+id: P-NU
+name: "Critical & Non-Unitary States"
+description: >
+  Studies non-unitary and critical trial states at filling factor ν = 5/2,
+  such as the Gaffnian state, and evaluates stripe, nematic, and bubble phases.
+core_hypotheses:
+  - H-006 # Stripe and Nematic Phase Competition
+active_questions:
+  - "Under what range of pseudopotential ratios is the stripe phase stabilized over the AP state?"
+  - "Does the Gaffnian state present a critical point separating different FQHE phases at 5/2?"
+key_benchmarks:
+  - "benchmark_nematic_transition_torus_n12"
+assigned_division: "Numerical Division / Analytical Division"
+---

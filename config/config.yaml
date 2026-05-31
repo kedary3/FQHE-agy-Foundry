@@ -1,0 +1,15 @@
+# Global Orchestration Configuration settings
+models:
+  pi: "gemini-1.5-pro"
+  coordinator: "gemini-1.5-flash"
+  theory: "gemini-1.5-pro"
+  numerical: "gemini-1.5-flash"
+  literature: "gemini-1.5-pro"
+  reproducer: "gemini-1.5-flash"
+  referee: "gemini-1.5-pro"
+
+paths:
+  knowledge_base: "knowledge_base"
+  simulations: "simulations"
+  recipes: "simulations/recipes"
+  results: "simulations/results"

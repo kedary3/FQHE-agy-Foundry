@@ -1,0 +1,15 @@
+id: P-PHS
+name: "Particle-Hole Symmetry"
+description: >
+  Investigates the particle-hole symmetry relations at filling factor ν = 5/2,
+  focusing on the relationship between the Pfaffian and Anti-Pfaffian states,
+  and whether a stable particle-hole symmetric (PH-Pfaffian) phase can be stabilized by disorder.
+core_hypotheses:
+  - H-002 # PH-Pfaffian Ground State Stability
+active_questions:
+  - "Does the exact ground state in torus geometry exhibit spontaneous particle-hole symmetry breaking?"
+  - "Can particle-hole symmetry be restored in ED via symmetric disorder configurations?"
+key_benchmarks:
+  - "benchmark_phs_torus_n12"
+assigned_division: "Analytical Division / Numerical Division"
+---

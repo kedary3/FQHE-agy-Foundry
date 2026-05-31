@@ -1,0 +1,14 @@
+id: P-PAR
+name: "Parton Constructions"
+description: >
+  Explores parton gauge-theory formulations of fractional quantum Hall states at ν = 5/2,
+  mapping multi-layer wavefunctions and topological invariants.
+core_hypotheses:
+  - H-005 # Parton Construction Wavefunctions
+active_questions:
+  - "Which parton ansatz corresponds to the anti-Pfaffian state, and how do they differ in bulk topological properties?"
+  - "Can we construct a robust variational wavefunction for ν = 5/2 using a 3-parton projection scheme?"
+key_benchmarks:
+  - "benchmark_parton_overlap_n8"
+assigned_division: "Analytical Division"
+---

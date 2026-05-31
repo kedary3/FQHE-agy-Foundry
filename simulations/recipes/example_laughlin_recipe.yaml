@@ -1,0 +1,13 @@
+id: "example_laughlin"
+title: "N=3, N_flux=6 Laughlin Ground State Validation"
+physics:
+  geometry: "sphere"
+  n_particles: 3
+  n_flux: 6
+  shift: 3
+  target_lz: 0.0
+  interaction:
+    pseudopotentials:
+      1: 1.0
+numerical:
+  k_lowest: 3

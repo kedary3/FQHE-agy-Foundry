@@ -1,0 +1,17 @@
+id: P-CPS
+name: "Competing Paired States"
+description: >
+  Directly compares the ground-state energies, wave-function overlaps, and
+  topological properties (entanglement spectrum, degeneracy) of competing candidate states
+  like Moore-Read Pfaffian, Anti-Pfaffian, and PH-Pfaffian.
+core_hypotheses:
+  - H-001
+  - H-002
+  - H-003
+active_questions:
+  - "Which candidate paired state has the lowest variational energy when realistic corrections are included?"
+  - "Do overlap studies of AP vs Pfaffian show a clear transition point as a function of the pseudopotential V1?"
+key_benchmarks:
+  - "benchmark_mr_overlap_sphere_n10"
+assigned_division: "Numerical Division / Independent Verification Division"
+---

@@ -1,0 +1,15 @@
+id: P-ER
+name: "Experimental Reconciliation"
+description: >
+  Maps theoretical calculations and numerical outputs directly to experimental observations
+  including thermal Hall conductance, energy gaps, interferometry patterns, and charge measurements.
+core_hypotheses:
+  - H-001
+  - H-002
+active_questions:
+  - "Can realistic bulk disorder restore K_xy = 2.5 thermal Hall conductance for an AP state with domain structures?"
+  - "How do finite quantum well thickness predictions translate to observed energy gaps in recent experiments?"
+key_benchmarks:
+  - "benchmark_experimental_conductance_reconciliation"
+assigned_division: "Experimental Division / Numerical Division / Analytical Division"
+---
