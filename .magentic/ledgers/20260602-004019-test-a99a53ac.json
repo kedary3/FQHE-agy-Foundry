@@ -1,0 +1,431 @@
+{
+  "final_report": "# Objective\nvalidate the N=3 Laughlin fixture and propose next nu=5/2 tests\n\n# Facts Gathered\n- Objective: validate the N=3 Laughlin fixture and propose next nu=5/2 tests\n- Workflow type: Magentic manager-led orchestration, not a fixed sequence.\n- Candidate nu=5/2 states are hypotheses and require evidence labels.\n- Laughlin validation fixture is available under simulations/results/.\n\n# Plan\n- task-literature: Gather candidate-state context and unresolved literature assumptions. [completed] agent=literature\n- task-theory: Classify which statements are exact, controlled, variational, or unresolved. [completed] agent=theory\n- task-numerical-ed: Validate the deterministic Laughlin fixture and report finite-size caveats. [completed] agent=numerical_ed\n- task-wavefunction-topology: Identify candidate-state topological observables that need future tests. [completed] agent=wavefunction_topology\n- task-critic: Challenge overinterpretation and propose discriminating falsification tests. [completed] agent=critic\n- task-report: Prepare synthesis inputs with provenance and unresolved gaps. [completed] agent=report\n\n# Agent Contributions\n- literature: Reviewed candidate-state scope without promoting any candidate to settled status.\n- theory: Classified the fixture Hamiltonian statement separately from nu=5/2 extrapolations.\n- numerical_ed: Checked deterministic ED fixture availability and lowest-eigenvalue evidence.\n- wavefunction_topology: Separated trial-state topology questions from fixture-level numerical validation.\n- critic: Flagged overinterpretation risks and next falsification targets.\n- report: Prepared final-report inputs from the manager-owned progress ledger.\n\n# Evidence\n- literature: {'type': 'repository_context', 'detail': 'README and AGENTS scientific scope'}\n- theory: {'type': 'epistemic_rule', 'detail': 'finite-size results are not thermodynamic proof'}\n- numerical_ed: {'type': 'fixture', 'path': 'simulations/results/result_example_laughlin.json', 'geometry': 'sphere', 'n_particles': 3, 'n_flux': 6, 'shift': 3, 'basis_dimension': 5, 'solver': 'scipy.sparse.linalg.eigsh', 'lowest_eigenvalue': 2.7755575615628914e-16}\n- wavefunction_topology: {'type': 'workflow_scope', 'detail': 'topological observables are required physics targets'}\n- critic: {'type': 'falsification_check', 'detail': 'fixture-to-target mismatch'}\n- report: {'type': 'ledger', 'reports_ingested': 5}\n\n# Physics Claim Classification\n- `phenomenological_argument`: Pfaffian, anti-Pfaffian, PH-Pfaffian, CFL, and stripe/nematic descriptions remain hypotheses for this workflow.\n- `exact_result`: An exact diagonalization eigenvalue is exact only for the specified finite Hamiltonian and basis.\n- `controlled_approximation`: Finite-width and Landau-level-mixing effects require explicit controlled parameters before acceptance.\n- `numerical_evidence`: The N=3, N_flux=6 Laughlin sphere fixture has a lowest eigenvalue consistent with zero.\n- `conjecture`: Quasiparticle charge, braiding, and thermal Hall response remain discriminating tests for candidate nu=5/2 states.\n- `variational_assumption`: Trial wavefunction overlaps should be labeled as variational evidence unless the microscopic derivation is supplied.\n- `unresolved`: The Laughlin fixture cannot be used as evidence for a specific nu=5/2 candidate ground state.\n- `exact_result`: The final report must preserve accepted, deferred, and unresolved claims with epistemic labels.\n\n## exact_result\n- An exact diagonalization eigenvalue is exact only for the specified finite Hamiltonian and basis.\n- The final report must preserve accepted, deferred, and unresolved claims with epistemic labels.\n## controlled_approximation\n- Finite-width and Landau-level-mixing effects require explicit controlled parameters before acceptance.\n## numerical_evidence\n- The N=3, N_flux=6 Laughlin sphere fixture has a lowest eigenvalue consistent with zero.\n## variational_assumption\n- Trial wavefunction overlaps should be labeled as variational evidence unless the microscopic derivation is supplied.\n## phenomenological_argument\n- Pfaffian, anti-Pfaffian, PH-Pfaffian, CFL, and stripe/nematic descriptions remain hypotheses for this workflow.\n## conjecture\n- Quasiparticle charge, braiding, and thermal Hall response remain discriminating tests for candidate nu=5/2 states.\n## unresolved\n- The Laughlin fixture cannot be used as evidence for a specific nu=5/2 candidate ground state.\n\n# Unresolved Gaps\n- Stall count: 0\n- Replan count: 0\n- Live literature citations, production LLM calls, and GitHub mutations are not used in deterministic test mode.\n\n# Recommended Next Tasks\n- Add citation-backed summaries for the leading nu=5/2 candidate states.\n- Specify a second-Landau-level Hamiltonian with finite-width and LL-mixing terms.\n- Add nu=5/2 second-Landau-level ED recipes with explicit geometry and shift.\n- Create fixtures for quasiparticle charge and shift predictions by candidate state.\n- Define falsifiable candidate predictions for gap, charge, statistics, and PH symmetry.\n- Wire live report generation to validated agent artifacts.",
+  "mode": "test",
+  "objective": "validate the N=3 Laughlin fixture and propose next nu=5/2 tests",
+  "progress_ledger": {
+    "events": [
+      {
+        "detail": "Objective: validate the N=3 Laughlin fixture and propose next nu=5/2 tests",
+        "event": "fact_added",
+        "time": "2026-06-02T00:40:19+00:00"
+      },
+      {
+        "detail": "Workflow type: Magentic manager-led orchestration, not a fixed sequence.",
+        "event": "fact_added",
+        "time": "2026-06-02T00:40:19+00:00"
+      },
+      {
+        "detail": "Candidate nu=5/2 states are hypotheses and require evidence labels.",
+        "event": "fact_added",
+        "time": "2026-06-02T00:40:19+00:00"
+      },
+      {
+        "detail": "Laughlin validation fixture is available under simulations/results/.",
+        "event": "fact_added",
+        "time": "2026-06-02T00:40:19+00:00"
+      },
+      {
+        "agent": "literature",
+        "event": "report_ingested",
+        "status": "success",
+        "task_id": "task-literature",
+        "time": "2026-06-02T00:40:19+00:00"
+      },
+      {
+        "agent": "theory",
+        "event": "report_ingested",
+        "status": "success",
+        "task_id": "task-theory",
+        "time": "2026-06-02T00:40:19+00:00"
+      },
+      {
+        "agent": "numerical_ed",
+        "event": "report_ingested",
+        "status": "success",
+        "task_id": "task-numerical-ed",
+        "time": "2026-06-02T00:40:19+00:00"
+      },
+      {
+        "agent": "wavefunction_topology",
+        "event": "report_ingested",
+        "status": "success",
+        "task_id": "task-wavefunction-topology",
+        "time": "2026-06-02T00:40:19+00:00"
+      },
+      {
+        "agent": "critic",
+        "event": "report_ingested",
+        "status": "success",
+        "task_id": "task-critic",
+        "time": "2026-06-02T00:40:19+00:00"
+      },
+      {
+        "agent": "report",
+        "event": "report_ingested",
+        "status": "success",
+        "task_id": "task-report",
+        "time": "2026-06-02T00:40:19+00:00"
+      }
+    ],
+    "facts": [
+      "Objective: validate the N=3 Laughlin fixture and propose next nu=5/2 tests",
+      "Workflow type: Magentic manager-led orchestration, not a fixed sequence.",
+      "Candidate nu=5/2 states are hypotheses and require evidence labels.",
+      "Laughlin validation fixture is available under simulations/results/."
+    ],
+    "last_progress_marker": 12,
+    "replan_count": 0,
+    "replan_requested": false,
+    "reports": [
+      {
+        "agent_name": "literature",
+        "assigned_goal": "Gather candidate-state context and unresolved literature assumptions.",
+        "assumptions": [
+          "Deterministic test mode uses repository context instead of live literature search."
+        ],
+        "claims": [
+          {
+            "epistemic_status": "phenomenological_argument",
+            "limitations": "No literature corpus was queried in deterministic test mode.",
+            "support": "Project scientific scope requires hypothesis tracking across candidate states.",
+            "text": "Pfaffian, anti-Pfaffian, PH-Pfaffian, CFL, and stripe/nematic descriptions remain hypotheses for this workflow."
+          }
+        ],
+        "computations_performed": [],
+        "epistemic_status": [
+          "phenomenological_argument",
+          "unresolved"
+        ],
+        "evidence": [
+          {
+            "detail": "README and AGENTS scientific scope",
+            "type": "repository_context"
+          }
+        ],
+        "files_changed": [],
+        "recommended_next_tasks": [
+          "Add citation-backed summaries for the leading nu=5/2 candidate states."
+        ],
+        "status": "success",
+        "summary": "Reviewed candidate-state scope without promoting any candidate to settled status.",
+        "task_id": "task-literature",
+        "tests_run": [],
+        "uncertainties": [
+          "Citation-level validation is deferred to production or curated fixtures."
+        ]
+      },
+      {
+        "agent_name": "theory",
+        "assigned_goal": "Classify which statements are exact, controlled, variational, or unresolved.",
+        "assumptions": [
+          "No live symbolic derivation was requested in test mode."
+        ],
+        "claims": [
+          {
+            "epistemic_status": "exact_result",
+            "limitations": "It does not establish a thermodynamic or experimental conclusion.",
+            "support": "This is a definition-level statement about a completely specified finite matrix problem.",
+            "text": "An exact diagonalization eigenvalue is exact only for the specified finite Hamiltonian and basis."
+          },
+          {
+            "epistemic_status": "controlled_approximation",
+            "limitations": "No expansion was evaluated in the stub.",
+            "support": "Perturbative treatments need a stated expansion parameter and regime.",
+            "text": "Finite-width and Landau-level-mixing effects require explicit controlled parameters before acceptance."
+          }
+        ],
+        "computations_performed": [],
+        "epistemic_status": [
+          "exact_result",
+          "controlled_approximation",
+          "unresolved"
+        ],
+        "evidence": [
+          {
+            "detail": "finite-size results are not thermodynamic proof",
+            "type": "epistemic_rule"
+          }
+        ],
+        "files_changed": [],
+        "recommended_next_tasks": [
+          "Specify a second-Landau-level Hamiltonian with finite-width and LL-mixing terms."
+        ],
+        "status": "success",
+        "summary": "Classified the fixture Hamiltonian statement separately from nu=5/2 extrapolations.",
+        "task_id": "task-theory",
+        "tests_run": [],
+        "uncertainties": [
+          "Microscopic nu=5/2 Hamiltonian terms remain unresolved."
+        ]
+      },
+      {
+        "agent_name": "numerical_ed",
+        "assigned_goal": "Validate the deterministic Laughlin fixture and report finite-size caveats.",
+        "assumptions": [
+          "The fixture JSON is treated as a deterministic test artifact."
+        ],
+        "claims": [
+          {
+            "epistemic_status": "numerical_evidence",
+            "limitations": "This validates a small Laughlin fixture, not the nu=5/2 thermodynamic state.",
+            "support": "Fixture simulations/results/result_example_laughlin.json reports lowest eigenvalue 2.776e-16.",
+            "text": "The N=3, N_flux=6 Laughlin sphere fixture has a lowest eigenvalue consistent with zero."
+          }
+        ],
+        "computations_performed": [
+          "Loaded and checked the deterministic Laughlin validation fixture."
+        ],
+        "epistemic_status": [
+          "numerical_evidence",
+          "unresolved"
+        ],
+        "evidence": [
+          {
+            "basis_dimension": 5,
+            "geometry": "sphere",
+            "lowest_eigenvalue": 2.7755575615628914e-16,
+            "n_flux": 6,
+            "n_particles": 3,
+            "path": "simulations/results/result_example_laughlin.json",
+            "shift": 3,
+            "solver": "scipy.sparse.linalg.eigsh",
+            "type": "fixture"
+          }
+        ],
+        "files_changed": [],
+        "recommended_next_tasks": [
+          "Add nu=5/2 second-Landau-level ED recipes with explicit geometry and shift."
+        ],
+        "status": "success",
+        "summary": "Checked deterministic ED fixture availability and lowest-eigenvalue evidence.",
+        "task_id": "task-numerical-ed",
+        "tests_run": [],
+        "uncertainties": []
+      },
+      {
+        "agent_name": "wavefunction_topology",
+        "assigned_goal": "Identify candidate-state topological observables that need future tests.",
+        "assumptions": [
+          "Candidate wavefunctions are hypotheses, not defaults."
+        ],
+        "claims": [
+          {
+            "epistemic_status": "conjecture",
+            "limitations": "No Berry phase, Chern number, or braiding computation was performed in test mode.",
+            "support": "These are proposed next comparisons in the absence of live calculations.",
+            "text": "Quasiparticle charge, braiding, and thermal Hall response remain discriminating tests for candidate nu=5/2 states."
+          },
+          {
+            "epistemic_status": "variational_assumption",
+            "limitations": "No overlap calculation was performed in the stub.",
+            "support": "The workflow tracks trial-state assumptions explicitly.",
+            "text": "Trial wavefunction overlaps should be labeled as variational evidence unless the microscopic derivation is supplied."
+          }
+        ],
+        "computations_performed": [],
+        "epistemic_status": [
+          "conjecture",
+          "variational_assumption",
+          "unresolved"
+        ],
+        "evidence": [
+          {
+            "detail": "topological observables are required physics targets",
+            "type": "workflow_scope"
+          }
+        ],
+        "files_changed": [],
+        "recommended_next_tasks": [
+          "Create fixtures for quasiparticle charge and shift predictions by candidate state."
+        ],
+        "status": "success",
+        "summary": "Separated trial-state topology questions from fixture-level numerical validation.",
+        "task_id": "task-wavefunction-topology",
+        "tests_run": [],
+        "uncertainties": [
+          "Topological response calculations remain unimplemented in deterministic test mode."
+        ]
+      },
+      {
+        "agent_name": "critic",
+        "assigned_goal": "Challenge overinterpretation and propose discriminating falsification tests.",
+        "assumptions": [
+          "Negative findings must be preserved in the final report."
+        ],
+        "claims": [
+          {
+            "epistemic_status": "unresolved",
+            "limitations": "A nu=5/2 Hamiltonian and candidate comparison are still required.",
+            "support": "The fixture is at N=3, N_flux=6 and validates reporting/ED plumbing only.",
+            "text": "The Laughlin fixture cannot be used as evidence for a specific nu=5/2 candidate ground state."
+          }
+        ],
+        "computations_performed": [
+          "Reviewed reports already ingested into the progress ledger."
+        ],
+        "epistemic_status": [
+          "unresolved"
+        ],
+        "evidence": [
+          {
+            "detail": "fixture-to-target mismatch",
+            "type": "falsification_check"
+          }
+        ],
+        "files_changed": [],
+        "recommended_next_tasks": [
+          "Define falsifiable candidate predictions for gap, charge, statistics, and PH symmetry."
+        ],
+        "status": "success",
+        "summary": "Flagged overinterpretation risks and next falsification targets.",
+        "task_id": "task-critic",
+        "tests_run": [],
+        "uncertainties": [
+          "No production-scale ED or experiment comparison has run."
+        ]
+      },
+      {
+        "agent_name": "report",
+        "assigned_goal": "Prepare synthesis inputs with provenance and unresolved gaps.",
+        "assumptions": [
+          "The PI manager performs the final synthesis."
+        ],
+        "claims": [
+          {
+            "epistemic_status": "exact_result",
+            "limitations": "It is a process claim, not a physics result.",
+            "support": "This is an operational requirement of the repository workflow contract.",
+            "text": "The final report must preserve accepted, deferred, and unresolved claims with epistemic labels."
+          }
+        ],
+        "computations_performed": [
+          "Counted specialist reports in the progress ledger."
+        ],
+        "epistemic_status": [
+          "exact_result",
+          "unresolved"
+        ],
+        "evidence": [
+          {
+            "reports_ingested": 5,
+            "type": "ledger"
+          }
+        ],
+        "files_changed": [],
+        "recommended_next_tasks": [
+          "Wire live report generation to validated agent artifacts."
+        ],
+        "status": "success",
+        "summary": "Prepared final-report inputs from the manager-owned progress ledger.",
+        "task_id": "task-report",
+        "tests_run": [],
+        "uncertainties": [
+          "Production citation formatting remains future work."
+        ]
+      }
+    ],
+    "stall_count": 0
+  },
+  "status": "completed",
+  "task_ledger": {
+    "created_at": "2026-06-02T00:40:19+00:00",
+    "mode": "test",
+    "objective": "validate the N=3 Laughlin fixture and propose next nu=5/2 tests",
+    "plan_steps": [
+      {
+        "assigned_agent": "literature",
+        "attempts": 1,
+        "dependencies": [],
+        "evidence_needed": [
+          "citations",
+          "assumptions"
+        ],
+        "goal": "Gather candidate-state context and unresolved literature assumptions.",
+        "notes": [],
+        "status": "completed",
+        "suggested_agent": "literature",
+        "task_id": "task-literature"
+      },
+      {
+        "assigned_agent": "theory",
+        "attempts": 1,
+        "dependencies": [],
+        "evidence_needed": [
+          "epistemic_status"
+        ],
+        "goal": "Classify which statements are exact, controlled, variational, or unresolved.",
+        "notes": [],
+        "status": "completed",
+        "suggested_agent": "theory",
+        "task_id": "task-theory"
+      },
+      {
+        "assigned_agent": "numerical_ed",
+        "attempts": 1,
+        "dependencies": [],
+        "evidence_needed": [
+          "fixture",
+          "solver",
+          "eigenvalues"
+        ],
+        "goal": "Validate the deterministic Laughlin fixture and report finite-size caveats.",
+        "notes": [],
+        "status": "completed",
+        "suggested_agent": "numerical_ed",
+        "task_id": "task-numerical-ed"
+      },
+      {
+        "assigned_agent": "wavefunction_topology",
+        "attempts": 1,
+        "dependencies": [
+          "task-literature",
+          "task-theory"
+        ],
+        "evidence_needed": [
+          "quasiparticle_charge",
+          "statistics"
+        ],
+        "goal": "Identify candidate-state topological observables that need future tests.",
+        "notes": [],
+        "status": "completed",
+        "suggested_agent": "wavefunction_topology",
+        "task_id": "task-wavefunction-topology"
+      },
+      {
+        "assigned_agent": "critic",
+        "attempts": 1,
+        "dependencies": [
+          "task-numerical-ed"
+        ],
+        "evidence_needed": [
+          "failure_modes"
+        ],
+        "goal": "Challenge overinterpretation and propose discriminating falsification tests.",
+        "notes": [],
+        "status": "completed",
+        "suggested_agent": "critic",
+        "task_id": "task-critic"
+      },
+      {
+        "assigned_agent": "report",
+        "attempts": 1,
+        "dependencies": [
+          "task-literature",
+          "task-theory",
+          "task-numerical-ed",
+          "task-wavefunction-topology",
+          "task-critic"
+        ],
+        "evidence_needed": [
+          "report_sections"
+        ],
+        "goal": "Prepare synthesis inputs with provenance and unresolved gaps.",
+        "notes": [],
+        "status": "completed",
+        "suggested_agent": "report",
+        "task_id": "task-report"
+      }
+    ],
+    "run_id": "20260602-004019-test-a99a53ac"
+  }
+}

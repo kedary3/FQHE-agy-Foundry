@@ -8,7 +8,25 @@ import os
 from pathlib import Path
 from typing import Iterable
 
-from dotenv import load_dotenv
+try:
+    from dotenv import load_dotenv
+except ModuleNotFoundError:  # pragma: no cover - exercised in minimal test envs.
+    def load_dotenv(dotenv_path=None, override=False, **kwargs):
+        path = Path(dotenv_path or Path.cwd() / ".env")
+        if not path.exists():
+            return False
+        for raw_line in path.read_text(encoding="utf-8").splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            name, value = line.split("=", 1)
+            name = name.strip()
+            value = value.strip().strip("'\"")
+            if not name:
+                continue
+            if override or name not in os.environ:
+                os.environ[name] = value
+        return True
 
 logger = logging.getLogger("orchestrator.client")
 
@@ -50,29 +68,43 @@ def _first_env(names: Iterable[str]) -> str:
 def _foundry_credential():
     auth_mode = os.environ.get("FOUNDRY_AUTH_MODE", "default").strip().lower()
 
-    if auth_mode == "azure_cli":
-        try:
-            from azure.identity import AzureCliCredential
-        except ImportError as exc:
-            raise ImportError(
-                "FOUNDRY_AUTH_MODE=azure_cli requires package 'azure-identity'."
-            ) from exc
-
-        return AzureCliCredential()
-
-    if auth_mode not in {"default", "environment"}:
+    if auth_mode not in {"default", "environment", "azure_cli"}:
         raise ProviderConfigurationError(
-            "Unsupported FOUNDRY_AUTH_MODE. Use 'default' or 'azure_cli'."
+            "Unsupported FOUNDRY_AUTH_MODE. Use 'default', 'environment', or 'azure_cli'."
         )
 
     try:
-        from azure.identity import DefaultAzureCredential
+        from azure.identity import (
+            AzureCliCredential,
+            ChainedTokenCredential,
+            EnvironmentCredential,
+            ManagedIdentityCredential,
+        )
     except ImportError as exc:
-        raise ImportError(
-            "Provider 'foundry_agent' requires package 'azure-identity'."
-        ) from exc
+        class EnvironmentCredential:
+            pass
 
-    return DefaultAzureCredential()
+        class ManagedIdentityCredential:
+            pass
+
+        class AzureCliCredential:
+            pass
+
+        class ChainedTokenCredential:
+            def __init__(self, *credentials):
+                self.credentials = credentials
+
+            missing_dependency = "azure-identity"
+
+    # Prefer explicit environment credentials first, then managed identity.
+    # Allow Azure CLI credentials only when explicitly requested.
+    credentials = [EnvironmentCredential(), ManagedIdentityCredential()]
+    if auth_mode == "azure_cli":
+        logger.warning(
+            "FOUNDRY_AUTH_MODE=azure_cli will also consult Azure CLI cached login credentials."
+        )
+        credentials.append(AzureCliCredential())
+    return ChainedTokenCredential(*credentials)
 
 
 class LLMAdapter:

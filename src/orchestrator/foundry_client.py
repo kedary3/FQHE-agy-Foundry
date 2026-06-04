@@ -1,19 +1,18 @@
 # src/orchestrator/foundry_client.py
 
 from dotenv import load_dotenv
-from azure.identity import DefaultAzureCredential
 from azure.ai.projects import AIProjectClient
 
 load_dotenv()
 
 class FoundryClient:
     def __init__(self, endpoint: str = None):
-        from .client import _require_env
+        from .client import _foundry_credential, _require_env
 
         self.endpoint = endpoint or _require_env("AZURE_AI_PROJECT_ENDPOINT")
         self.project = AIProjectClient(
             endpoint=self.endpoint,
-            credential=DefaultAzureCredential(),
+            credential=_foundry_credential(),
         )
 
     def create_thread(self):

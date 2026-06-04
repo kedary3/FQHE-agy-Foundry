@@ -29,6 +29,9 @@ def render_daily_report(
     warnings: list[str],
 ) -> str:
     status = synthesis["scientific_status"]
+    memory_context = task_graph.get("memory_context", {})
+    planning_signals = memory_context.get("planning_signals", {})
+    github_issue_state = memory_context.get("sources", {}).get("github_issues", {})
 
     lines = [
         "# Daily Research Loop Report",
@@ -46,13 +49,35 @@ def render_daily_report(
         "## Director plan",
         f"- Planned tasks: {len(task_graph.get('tasks', []))}",
         f"- Parallel groups: {len(task_graph.get('parallel_groups', []))}",
+        f"- Durable memory sources indexed: {len(memory_context.get('source_index', []))}",
+        f"- Prior required task failures considered: {len(planning_signals.get('prior_required_agent_failures', []))}",
+        f"- Rejected claims considered: {planning_signals.get('rejected_claim_count', 0)}",
+        f"- Open GitHub issues considered: {len(planning_signals.get('open_github_issues', []))}",
         "",
-        "## Agent task graph",
+        "## Durable memory sources",
     ]
+
+    for source in memory_context.get("source_index", [])[:10]:
+        path = source.get("path") or "github"
+        lines.append(
+            f"- `{source.get('kind')}` `{path}`: {source.get('summary', '')}"
+        )
+    if not memory_context.get("source_index"):
+        lines.append("- None indexed.")
+    if github_issue_state and not github_issue_state.get("available"):
+        lines.append(f"- GitHub issue read state: {github_issue_state.get('error')}")
+
+    lines.extend(
+        [
+            "",
+            "## Agent task graph",
+        ]
+    )
 
     for task in task_graph.get("tasks", []):
         lines.append(
-            f"- `{task['task_id']}` -> {task['agent_role']}: {task['objective']}"
+            f"- `{task['task_id']}` -> {task['agent_role']}: "
+            f"{task.get('daily_loop_command', task['objective'])}"
         )
 
     lines.extend(["", "## Subagent results"])

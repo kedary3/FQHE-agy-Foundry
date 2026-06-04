@@ -73,3 +73,16 @@ def test_provider_connectivity_cli_does_not_print_secret(monkeypatch, capsys):
     assert "Provider connectivity status: ok" in output.out
     assert "super_secret_token" not in output.out
     assert "super_secret_token" not in output.err
+
+
+def test_production_environment_validation_matches_repo_contract():
+    with pytest.raises(RuntimeError, match="AZURE_AI_PROJECT_ENDPOINT"):
+        cli._validate_production_environment({})
+
+    cli._validate_production_environment(
+        {
+            "AZURE_AI_PROJECT_ENDPOINT": "https://example.invalid",
+            "FOUNDRY_AGENT_ID": "agent",
+            "RESEARCH_REPOSITORY": "owner/repo",
+        }
+    )

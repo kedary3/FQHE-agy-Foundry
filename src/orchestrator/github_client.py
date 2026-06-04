@@ -63,6 +63,27 @@ class GitHubClient:
             logger.error(f"Error fetching issues with label {label}: {e}")
             return []
 
+    def get_open_issues(self, limit: int = 20) -> list:
+        """
+        Fetch recent open issues without mutating GitHub state.
+
+        Args:
+            limit (int): Maximum number of open issues to return.
+
+        Returns:
+            list: List of PyGithub Issue objects.
+        """
+        if not self.is_configured():
+            logger.error("GitHub client is not configured.")
+            return []
+        from github import GithubException
+        try:
+            issues = self.repo.get_issues(state="open")
+            return list(issues[:limit])
+        except GithubException as e:
+            logger.error(f"Error fetching open issues: {e}")
+            return []
+
     def create_issue(self, title: str, body: str, labels: list = None) -> int:
         """
         Create a new GitHub issue.

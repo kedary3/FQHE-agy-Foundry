@@ -146,6 +146,14 @@ def validate_environment(
             f"Missing required environment variable(s) for {config.mode} mode: {joined}"
         )
 
+    if config.is_production:
+        auth_mode = current_env.get("FOUNDRY_AUTH_MODE", "default").strip().lower()
+        if auth_mode == "azure_cli":
+            raise RunModeConfigurationError(
+                "FOUNDRY_AUTH_MODE=azure_cli is not permitted in production mode. "
+                "Use environment-based authentication instead."
+            )
+
 
 def _with_workspace_paths(config: BaseRunConfig, workspace: Path) -> BaseRunConfig:
     artifact_root = config.artifact_root

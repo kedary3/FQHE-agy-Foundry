@@ -3,15 +3,45 @@
 
 import argparse
 import logging
+import os
 import sys
 from pathlib import Path
 
-from dotenv import load_dotenv
+try:
+    from dotenv import load_dotenv
+except ModuleNotFoundError:  # pragma: no cover - exercised in minimal test envs.
+    def load_dotenv(dotenv_path=None, override=False, **kwargs):
+        path = Path(dotenv_path or Path.cwd() / ".env")
+        if not path.exists():
+            return False
+        for raw_line in path.read_text(encoding="utf-8").splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            name, value = line.split("=", 1)
+            name = name.strip()
+            value = value.strip().strip("'\"")
+            if not name:
+                continue
+            if override or name not in os.environ:
+                os.environ[name] = value
+        return True
 
 from .client import LLMAdapter
 from .daily_loop import DailyLoopError, DailyLoopRunner
 from .engine import ResearchDepartmentEngine
+from .magentic_manager import PIManager
 from ..physics.runner import execute_simulation_recipe
+
+
+DEFAULT_MAGENTIC_OBJECTIVE = (
+    "Validate the N=3 Laughlin fixture and propose next nu=5/2 tests"
+)
+PRODUCTION_ENV_VARS = (
+    "AZURE_AI_PROJECT_ENDPOINT",
+    "FOUNDRY_AGENT_ID",
+    "RESEARCH_REPOSITORY",
+)
 
 
 def configure_logging() -> None:
@@ -21,6 +51,59 @@ def configure_logging() -> None:
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
         handlers=[logging.StreamHandler(sys.stdout)],
     )
+
+
+def _load_workflow_config(path: Path) -> dict:
+    if not path.exists():
+        return {}
+    try:
+        import yaml
+    except ImportError:
+        return {}
+    with path.open("r", encoding="utf-8") as handle:
+        return yaml.safe_load(handle) or {}
+
+
+def _validate_production_environment(env: dict) -> None:
+    missing = [name for name in PRODUCTION_ENV_VARS if not env.get(name)]
+    if missing:
+        joined = ", ".join(missing)
+        raise RuntimeError(f"Missing required production environment variables: {joined}")
+
+
+def _run_magentic_mode(args: argparse.Namespace, logger: logging.Logger) -> None:
+    config_path = Path(args.config or "config/workflows/magentic.yaml")
+    config = _load_workflow_config(config_path)
+
+    if args.mode == "production":
+        _validate_production_environment(os.environ)
+
+    manager_config = config.get("manager", {})
+    parallelism = config.get("parallelism", {})
+    manager = PIManager(
+        max_rounds=int(manager_config.get("max_rounds", 12)),
+        max_parallel_agents=int(parallelism.get("max_parallel_agents", 3)),
+        max_stall_count=int(manager_config.get("max_stall_count", 3)),
+        max_replans=int(manager_config.get("max_replans", 3)),
+    )
+    objective = args.objective or DEFAULT_MAGENTIC_OBJECTIVE
+    state = manager.run_test_loop(objective)
+    state.mode = args.mode
+    state.task_ledger.mode = args.mode
+
+    artifacts = config.get("artifacts", {})
+    ledger_root = Path(artifacts.get("ledger_path", ".magentic/ledgers/"))
+    reports_root = Path(artifacts.get("reports_path", "reports/"))
+    ledger_path = ledger_root / f"{state.task_ledger.run_id}.json"
+    report_path = reports_root / f"{state.task_ledger.run_id}.md"
+
+    state.to_json(ledger_path)
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text(state.final_report, encoding="utf-8")
+
+    logger.info("Magentic loop finished with status: %s", state.status)
+    logger.info("Ledger written: %s", ledger_path)
+    logger.info("Report written: %s", report_path)
 
 
 def main() -> None:
@@ -48,9 +131,21 @@ def main() -> None:
         choices=("test", "production"),
         default=None,
         help=(
-            "Run the Director-controlled daily loop in explicit test or production mode. "
-            "Omit this to use the legacy engine path."
+            "Run the Magentic manager loop in explicit test or production mode. "
+            "With --run, use the legacy Director-controlled daily loop."
         ),
+    )
+    parser.add_argument(
+        "--objective",
+        type=str,
+        default=None,
+        help="Research objective for the Magentic manager loop.",
+    )
+    parser.add_argument(
+        "--config",
+        type=str,
+        default=None,
+        help="Optional Magentic workflow config path.",
     )
     parser.add_argument(
         "--recipe",
@@ -129,6 +224,13 @@ def main() -> None:
                 delegation["mission"],
                 delegation["task_id"],
             )
+
+    elif args.mode:
+        try:
+            _run_magentic_mode(args, logger)
+        except Exception as exc:
+            logger.error("Magentic loop failed: %s", exc)
+            sys.exit(1)
 
     elif args.recipe:
         try:

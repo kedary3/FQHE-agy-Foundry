@@ -46,6 +46,27 @@ GitHub writes are gated. Set `DAILY_LOOP_GITHUB_WRITE=true` to allow production 
 
 The Director lives in `src/orchestrator/director.py`. It generates the task graph, validates subagent output schemas, enforces evidence labels, rejects malformed claims, and synthesizes the final report.
 
+Daily subagent work is generated from durable memory, not static role prompts. Before planning, `DailyLoopRunner` collects a sanitized memory context from:
+
+- `knowledge_base/claim_ledger.md`
+- `knowledge_base/falsification_log.md`
+- recent `knowledge_base/daily_reports/*.md`
+- recent `artifacts/test/*` and `artifacts/production/*` run summaries, ledgers, validation summaries, and agent outputs
+- `simulations/results/*.json`
+- `simulations/recipes/*.yaml`
+- `reports/*.md`
+- open GitHub issue state when a configured read-capable GitHub client is available
+
+The collected memory is written to `memory_context.json`. Each task in `task_graph.json` includes:
+
+- `daily_loop_command`
+- `memory_triggers`
+- `source_refs`
+- `skill_instructions`
+- `bounded_deliverables`
+
+GitHub issue reads do not enable GitHub writes. Test mode skips live GitHub issue reads unless a test client is injected or `DAILY_LOOP_GITHUB_READ=true` is set. Production writes remain gated by `DAILY_LOOP_GITHUB_WRITE=true` and PR creation remains gated separately.
+
 Required agent configs live in `config/agents/`:
 
 - `director_pi.yaml`

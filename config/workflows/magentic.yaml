@@ -1,0 +1,29 @@
+workflow_name: magentic_fqhe_research_department
+mode: test
+manager:
+  role: pi_magentic_manager
+  max_rounds: 12
+  max_stall_count: 3
+  max_replans: 3
+  require_progress_ledger: true
+  require_final_synthesis: true
+agents:
+  - literature
+  - theory
+  - numerical_ed
+  - wavefunction_topology
+  - critic
+  - report
+parallelism:
+  enabled: true
+  max_parallel_agents: 3
+checkpointing:
+  enabled: true
+  path: .magentic/checkpoints/
+artifacts:
+  reports_path: reports/
+  ledger_path: .magentic/ledgers/
+  simulations_path: simulations/
+github:
+  enabled: false
+  dry_run: true

@@ -39,3 +39,4 @@ simulations/results/**/*.hdf5
 
 # Local CLI state
 .antigravitycli/
+.codex/

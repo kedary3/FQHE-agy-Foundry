@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+import importlib.util
 from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
@@ -14,6 +15,7 @@ import yaml
 from .client import LLMAdapter
 from .director import Director, MalformedAgentOutput
 from .github_client import GitHubClient
+from .memory import DurableMemoryCollector
 from .parallel_runner import ParallelAgentRunner
 from .reporting import render_daily_report, write_daily_report, write_json
 from .run_modes import BaseRunConfig, get_run_config, validate_environment
@@ -52,6 +54,7 @@ class DailyLoopRunner:
         validate_environment(self.config)
         project_config = self._load_yaml(self.workspace_path / "config" / "config.yaml")
         agent_configs = self._load_agent_configs()
+        memory_context = self._collect_memory_context(project_config)
 
         if self.config.use_live_foundry and self.llm_adapter is None:
             self.llm_adapter = LLMAdapter(provider=self.config.foundry_provider)
@@ -60,11 +63,6 @@ class DailyLoopRunner:
         daily_objective = objective or (
             "Run the daily ν=5/2 FQHE research loop with explicit evidence labels."
         )
-        memory_context = {
-            "workspace": str(self.workspace_path),
-            "config_models": project_config.get("models", {}),
-            "mode_is_canonical": self.config.is_production,
-        }
         task_graph = director.generate_daily_plan(daily_objective, memory_context)
         director.validate_task_graph(task_graph)
 
@@ -128,6 +126,7 @@ class DailyLoopRunner:
             run_status = "partial"
 
         run_dir.mkdir(parents=True, exist_ok=True)
+        artifact_paths.append(str(write_json(run_dir / "memory_context.json", memory_context)))
         artifact_paths.append(str(write_json(run_dir / "task_graph.json", task_graph)))
         artifact_paths.append(str(write_json(run_dir / "task_ledger.json", ledger)))
         artifact_paths.append(
@@ -211,11 +210,24 @@ class DailyLoopRunner:
         if self.llm_adapter is None:
             raise DailyLoopError("Live Foundry execution requested without LLMAdapter.")
 
+        prompt_payload = {
+            "task_id": task["task_id"],
+            "agent_name": task["agent_name"],
+            "agent_role": task["agent_role"],
+            "run_id": task["run_id"],
+            "mode": self.mode,
+            "daily_loop_command": task["daily_loop_command"],
+            "skill_instructions": task["skill_instructions"],
+            "source_refs": task["source_refs"],
+            "bounded_deliverables": task["bounded_deliverables"],
+            "memory_triggers": task.get("memory_triggers", []),
+            "expected_outputs": task.get("expected_outputs", []),
+        }
         prompt = (
             "Return only valid JSON matching the repository agent output schema. "
             "Do not include Markdown fences. "
-            f"Run id: {task['run_id']}. Mode: {self.mode}. "
-            f"Task: {json.dumps(task, sort_keys=True)}"
+            "Use the generated daily_loop_command as the task, not a static role prompt. "
+            f"Task payload: {json.dumps(prompt_payload, sort_keys=True)}"
         )
         response = self.llm_adapter.generate_text(
             prompt=prompt,
@@ -232,6 +244,42 @@ class DailyLoopRunner:
             raise DailyLoopError(f"Foundry subagent returned malformed JSON: {exc}") from exc
 
         return parsed
+
+    def _collect_memory_context(self, project_config: dict[str, Any]) -> dict[str, Any]:
+        collector = DurableMemoryCollector(
+            workspace_path=self.workspace_path,
+            mode=self.mode,
+            github_client=self._github_client_for_memory(),
+        )
+        memory_context = collector.collect()
+        memory_context["config_models"] = project_config.get("models", {})
+        memory_context["mode_is_canonical"] = self.config.is_production
+        return memory_context
+
+    def _github_client_for_memory(self) -> GitHubClient | None:
+        if self.github_client is not None:
+            return self.github_client
+
+        if self.config.is_test and os.environ.get("DAILY_LOOP_GITHUB_READ") != "true":
+            return None
+
+        has_github_env = bool(
+            os.environ.get("GITHUB_TOKEN")
+            and (
+                os.environ.get("RESEARCH_REPOSITORY")
+                or os.environ.get("GITHUB_REPOSITORY")
+            )
+        )
+        if not has_github_env:
+            return None
+        if importlib.util.find_spec("github") is None:
+            return None
+
+        try:
+            self.github_client = GitHubClient()
+        except Exception:
+            return None
+        return self.github_client
 
     def _run_physics_checks(self) -> dict[str, Any]:
         fixture_path = self.workspace_path / "simulations" / "results" / "result_example_laughlin.json"
