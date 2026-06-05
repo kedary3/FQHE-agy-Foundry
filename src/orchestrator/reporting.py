@@ -32,6 +32,13 @@ def render_daily_report(
     memory_context = task_graph.get("memory_context", {})
     planning_signals = memory_context.get("planning_signals", {})
     github_issue_state = memory_context.get("sources", {}).get("github_issues", {})
+    branch_digest = memory_context.get("theory_branch_digest", [])
+    dialogue_summaries = synthesis.get(
+        "inter_agent_dialogue_summaries",
+        task_graph.get("inter_agent_dialogue_summaries", []),
+    )
+    branch_updates = synthesis.get("branch_updates", [])
+    theory_handoffs = synthesis.get("theory_to_numerics_handoffs", [])
 
     lines = [
         "# Daily Research Loop Report",
@@ -54,8 +61,47 @@ def render_daily_report(
         f"- Rejected claims considered: {planning_signals.get('rejected_claim_count', 0)}",
         f"- Open GitHub issues considered: {len(planning_signals.get('open_github_issues', []))}",
         "",
-        "## Durable memory sources",
+        "## Theory branch ledger digest",
     ]
+
+    if branch_digest:
+        for branch in branch_digest[:8]:
+            lines.append(
+                f"- `{branch.get('status')}` `{branch.get('branch_id')}`: "
+                f"{branch.get('title')} Revival: {branch.get('revival_criteria') or 'not applicable'}"
+            )
+    else:
+        lines.append("- No prior branch ledger entries were available.")
+
+    lines.extend(
+        [
+            "",
+            "## Inter-agent dialogue summaries",
+        ]
+    )
+    if dialogue_summaries:
+        for dialogue in dialogue_summaries:
+            lines.append(
+                f"- `{dialogue.get('dialogue_id')}` status=`{dialogue.get('status')}` "
+                f"participants={', '.join(dialogue.get('participants', []))}: "
+                f"{dialogue.get('summary')}"
+            )
+            lines.append(f"- Refined goal: {dialogue.get('refined_goal')}")
+            for turn in dialogue.get("turns", [])[:6]:
+                lines.append(
+                    f"- Planning turn `{turn.get('speaker')}`: {turn.get('message')}"
+                )
+            for rule in dialogue.get("handoff_rules", [])[:3]:
+                lines.append(f"- Handoff rule: {rule}")
+    else:
+        lines.append("- None.")
+
+    lines.extend(
+        [
+            "",
+            "## Durable memory sources",
+        ]
+    )
 
     for source in memory_context.get("source_index", [])[:10]:
         path = source.get("path") or "github"
@@ -86,6 +132,32 @@ def render_daily_report(
             f"- `{output.get('task_id')}` {output.get('agent_role')} "
             f"status=`{output.get('status')}`: {output.get('summary')}"
         )
+
+    lines.extend(["", "## Branch updates"])
+    if branch_updates:
+        for update in branch_updates:
+            lines.append(
+                f"- `{update.get('status')}` `{update.get('branch_id')}`: "
+                f"{update.get('title')} Rationale: {update.get('rationale')}"
+            )
+            if update.get("status") == "pruned":
+                lines.append(
+                    f"- Revival criteria for `{update.get('branch_id')}`: "
+                    f"{update.get('revival_criteria')}"
+                )
+    else:
+        lines.append("- None.")
+
+    lines.extend(["", "## Theory to numerics handoffs"])
+    if theory_handoffs:
+        for handoff in theory_handoffs:
+            lines.append(
+                f"- `{handoff.get('handoff_id')}` type=`{handoff.get('artifact_type')}` "
+                f"from `{handoff.get('source_task_id')}`: {handoff.get('description')}"
+            )
+            lines.append(f"- Required numerics: {handoff.get('required_numerics')}")
+    else:
+        lines.append("- None accepted; numerics was not instantiated.")
 
     lines.extend(
         [

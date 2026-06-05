@@ -257,3 +257,573 @@
     "Inspect exception and rerun the failed task."
   ]
 }
+
+## 20260605-050357-production-949aa3bb
+
+{
+  "accepted_claims": [],
+  "rejected_claims": [
+    {
+      "claim_id": "production-01-literature_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent run failed: {'code': 'invalid_engine_error', 'message': 'Failed to resolve model info for: gpt-4.1'}"
+    },
+    {
+      "claim_id": "production-02-theory_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent run failed: {'code': 'invalid_engine_error', 'message': 'Failed to resolve model info for: gpt-4.1'}"
+    },
+    {
+      "claim_id": "production-03-falsification_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent run failed: {'code': 'invalid_engine_error', 'message': 'Failed to resolve model info for: gpt-4.1'}"
+    },
+    {
+      "claim_id": "production-04-experiment_bridge_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent run failed: {'code': 'invalid_engine_error', 'message': 'Failed to resolve model info for: gpt-4.1'}"
+    },
+    {
+      "claim_id": "production-05-knowledge_curator_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent run failed: {'code': 'invalid_engine_error', 'message': 'Failed to resolve model info for: gpt-4.1'}"
+    }
+  ],
+  "deferred_claims": [],
+  "unresolved_assumptions": [],
+  "proposed_next_tests": [
+    "Inspect exception and rerun the failed task."
+  ]
+}
+
+## 20260605-055701-production-b800073d
+
+{
+  "accepted_claims": [],
+  "rejected_claims": [
+    {
+      "claim_id": "production-01-literature_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent run failed: {'code': 'invalid_engine_error', 'message': 'Failed to resolve model info for: gpt-4.1'}"
+    },
+    {
+      "claim_id": "production-02-theory_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent run failed: {'code': 'invalid_engine_error', 'message': 'Failed to resolve model info for: gpt-4.1'}"
+    },
+    {
+      "claim_id": "production-03-falsification_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent run failed: {'code': 'invalid_engine_error', 'message': 'Failed to resolve model info for: gpt-4.1'}"
+    },
+    {
+      "claim_id": "production-04-experiment_bridge_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent run failed: {'code': 'invalid_engine_error', 'message': 'Failed to resolve model info for: gpt-4.1'}"
+    },
+    {
+      "claim_id": "production-05-knowledge_curator_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent run failed: {'code': 'invalid_engine_error', 'message': 'Failed to resolve model info for: gpt-4.1'}"
+    }
+  ],
+  "deferred_claims": [],
+  "unresolved_assumptions": [],
+  "proposed_next_tests": [
+    "Inspect exception and rerun the failed task."
+  ]
+}
+
+## 20260605-083214-production-7e094669
+
+{
+  "accepted_claims": [],
+  "rejected_claims": [
+    {
+      "claim_id": "production-01-literature_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): Error code: 404 - {'error': {'message': 'The API deployment for this resource does not exist. If you created the deployment within the last 5 minutes, please wait a moment and try again.', 'type': 'invalid_request_error', 'param': None, 'code': 'DeploymentNotFound'}}"
+    },
+    {
+      "claim_id": "production-02-theory_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): Error code: 404 - {'error': {'message': 'The API deployment for this resource does not exist. If you created the deployment within the last 5 minutes, please wait a moment and try again.', 'type': 'invalid_request_error', 'param': None, 'code': 'DeploymentNotFound'}}"
+    },
+    {
+      "claim_id": "production-03-falsification_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): Error code: 404 - {'error': {'message': 'The API deployment for this resource does not exist. If you created the deployment within the last 5 minutes, please wait a moment and try again.', 'type': 'invalid_request_error', 'param': None, 'code': 'DeploymentNotFound'}}"
+    },
+    {
+      "claim_id": "production-04-experiment_bridge_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): Error code: 404 - {'error': {'message': 'The API deployment for this resource does not exist. If you created the deployment within the last 5 minutes, please wait a moment and try again.', 'type': 'invalid_request_error', 'param': None, 'code': 'DeploymentNotFound'}}"
+    },
+    {
+      "claim_id": "production-05-knowledge_curator_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): Error code: 404 - {'error': {'message': 'The API deployment for this resource does not exist. If you created the deployment within the last 5 minutes, please wait a moment and try again.', 'type': 'invalid_request_error', 'param': None, 'code': 'DeploymentNotFound'}}"
+    }
+  ],
+  "deferred_claims": [],
+  "unresolved_assumptions": [],
+  "proposed_next_tests": [
+    "Inspect exception and rerun the failed task."
+  ]
+}
+
+## 20260605-083510-production-61b90de2
+
+{
+  "accepted_claims": [],
+  "rejected_claims": [
+    {
+      "claim_id": "production-01-literature_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): Error code: 404 - {'error': {'message': 'The API deployment for this resource does not exist. If you created the deployment within the last 5 minutes, please wait a moment and try again.', 'type': 'invalid_request_error', 'param': None, 'code': 'DeploymentNotFound'}}"
+    },
+    {
+      "claim_id": "production-02-theory_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): Error code: 404 - {'error': {'message': 'The API deployment for this resource does not exist. If you created the deployment within the last 5 minutes, please wait a moment and try again.', 'type': 'invalid_request_error', 'param': None, 'code': 'DeploymentNotFound'}}"
+    },
+    {
+      "claim_id": "production-03-falsification_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): Error code: 404 - {'error': {'message': 'The API deployment for this resource does not exist. If you created the deployment within the last 5 minutes, please wait a moment and try again.', 'type': 'invalid_request_error', 'param': None, 'code': 'DeploymentNotFound'}}"
+    },
+    {
+      "claim_id": "production-04-experiment_bridge_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): Error code: 404 - {'error': {'message': 'The API deployment for this resource does not exist. If you created the deployment within the last 5 minutes, please wait a moment and try again.', 'type': 'invalid_request_error', 'param': None, 'code': 'DeploymentNotFound'}}"
+    },
+    {
+      "claim_id": "production-05-knowledge_curator_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): Error code: 404 - {'error': {'message': 'The API deployment for this resource does not exist. If you created the deployment within the last 5 minutes, please wait a moment and try again.', 'type': 'invalid_request_error', 'param': None, 'code': 'DeploymentNotFound'}}"
+    }
+  ],
+  "deferred_claims": [],
+  "unresolved_assumptions": [],
+  "proposed_next_tests": [
+    "Inspect exception and rerun the failed task."
+  ]
+}
+
+## 20260605-084305-production-7d7e4131
+
+{
+  "accepted_claims": [],
+  "rejected_claims": [
+    {
+      "claim_id": "production-01-literature_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): Error code: 404 - {'error': {'message': 'The API deployment for this resource does not exist. If you created the deployment within the last 5 minutes, please wait a moment and try again.', 'type': 'invalid_request_error', 'param': None, 'code': 'DeploymentNotFound'}}"
+    },
+    {
+      "claim_id": "production-02-theory_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): Error code: 404 - {'error': {'message': 'The API deployment for this resource does not exist. If you created the deployment within the last 5 minutes, please wait a moment and try again.', 'type': 'invalid_request_error', 'param': None, 'code': 'DeploymentNotFound'}}"
+    },
+    {
+      "claim_id": "production-03-falsification_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): Error code: 404 - {'error': {'message': 'The API deployment for this resource does not exist. If you created the deployment within the last 5 minutes, please wait a moment and try again.', 'type': 'invalid_request_error', 'param': None, 'code': 'DeploymentNotFound'}}"
+    },
+    {
+      "claim_id": "production-04-experiment_bridge_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): Error code: 404 - {'error': {'message': 'The API deployment for this resource does not exist. If you created the deployment within the last 5 minutes, please wait a moment and try again.', 'type': 'invalid_request_error', 'param': None, 'code': 'DeploymentNotFound'}}"
+    },
+    {
+      "claim_id": "production-05-knowledge_curator_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): Error code: 404 - {'error': {'message': 'The API deployment for this resource does not exist. If you created the deployment within the last 5 minutes, please wait a moment and try again.', 'type': 'invalid_request_error', 'param': None, 'code': 'DeploymentNotFound'}}"
+    }
+  ],
+  "deferred_claims": [],
+  "unresolved_assumptions": [],
+  "proposed_next_tests": [
+    "Inspect exception and rerun the failed task."
+  ]
+}
+
+## 20260605-084644-production-5514e418
+
+{
+  "accepted_claims": [],
+  "rejected_claims": [
+    {
+      "claim_id": "production-01-literature_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): Error code: 404 - {'error': {'message': 'The API deployment for this resource does not exist. If you created the deployment within the last 5 minutes, please wait a moment and try again.', 'type': 'invalid_request_error', 'param': None, 'code': 'DeploymentNotFound'}}"
+    },
+    {
+      "claim_id": "production-02-theory_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): Error code: 404 - {'error': {'message': 'The API deployment for this resource does not exist. If you created the deployment within the last 5 minutes, please wait a moment and try again.', 'type': 'invalid_request_error', 'param': None, 'code': 'DeploymentNotFound'}}"
+    },
+    {
+      "claim_id": "production-03-falsification_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): Error code: 404 - {'error': {'message': 'The API deployment for this resource does not exist. If you created the deployment within the last 5 minutes, please wait a moment and try again.', 'type': 'invalid_request_error', 'param': None, 'code': 'DeploymentNotFound'}}"
+    },
+    {
+      "claim_id": "production-04-experiment_bridge_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): Error code: 404 - {'error': {'message': 'The API deployment for this resource does not exist. If you created the deployment within the last 5 minutes, please wait a moment and try again.', 'type': 'invalid_request_error', 'param': None, 'code': 'DeploymentNotFound'}}"
+    },
+    {
+      "claim_id": "production-05-knowledge_curator_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): Error code: 404 - {'error': {'message': 'The API deployment for this resource does not exist. If you created the deployment within the last 5 minutes, please wait a moment and try again.', 'type': 'invalid_request_error', 'param': None, 'code': 'DeploymentNotFound'}}"
+    }
+  ],
+  "deferred_claims": [],
+  "unresolved_assumptions": [],
+  "proposed_next_tests": [
+    "Inspect exception and rerun the failed task."
+  ]
+}
+
+## 20260605-084718-production-b10368ea
+
+{
+  "accepted_claims": [],
+  "rejected_claims": [
+    {
+      "claim_id": "production-01-literature_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): Error code: 404 - {'error': {'message': 'The API deployment for this resource does not exist. If you created the deployment within the last 5 minutes, please wait a moment and try again.', 'type': 'invalid_request_error', 'param': None, 'code': 'DeploymentNotFound'}}"
+    },
+    {
+      "claim_id": "production-02-theory_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): Error code: 404 - {'error': {'message': 'The API deployment for this resource does not exist. If you created the deployment within the last 5 minutes, please wait a moment and try again.', 'type': 'invalid_request_error', 'param': None, 'code': 'DeploymentNotFound'}}"
+    },
+    {
+      "claim_id": "production-03-falsification_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): Error code: 404 - {'error': {'message': 'The API deployment for this resource does not exist. If you created the deployment within the last 5 minutes, please wait a moment and try again.', 'type': 'invalid_request_error', 'param': None, 'code': 'DeploymentNotFound'}}"
+    },
+    {
+      "claim_id": "production-04-experiment_bridge_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): Error code: 404 - {'error': {'message': 'The API deployment for this resource does not exist. If you created the deployment within the last 5 minutes, please wait a moment and try again.', 'type': 'invalid_request_error', 'param': None, 'code': 'DeploymentNotFound'}}"
+    },
+    {
+      "claim_id": "production-05-knowledge_curator_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): Error code: 404 - {'error': {'message': 'The API deployment for this resource does not exist. If you created the deployment within the last 5 minutes, please wait a moment and try again.', 'type': 'invalid_request_error', 'param': None, 'code': 'DeploymentNotFound'}}"
+    }
+  ],
+  "deferred_claims": [],
+  "unresolved_assumptions": [],
+  "proposed_next_tests": [
+    "Inspect exception and rerun the failed task."
+  ]
+}
+
+## 20260605-085753-production-80cbd065
+
+{
+  "accepted_claims": [],
+  "rejected_claims": [
+    {
+      "claim_id": "production-01-literature_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): (BadRequest) Missing required query parameter: api-version\nCode: BadRequest\nMessage: Missing required query parameter: api-version"
+    },
+    {
+      "claim_id": "production-02-theory_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): (BadRequest) Missing required query parameter: api-version\nCode: BadRequest\nMessage: Missing required query parameter: api-version"
+    },
+    {
+      "claim_id": "production-03-falsification_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): (BadRequest) Missing required query parameter: api-version\nCode: BadRequest\nMessage: Missing required query parameter: api-version"
+    },
+    {
+      "claim_id": "production-04-experiment_bridge_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): (BadRequest) Missing required query parameter: api-version\nCode: BadRequest\nMessage: Missing required query parameter: api-version"
+    },
+    {
+      "claim_id": "production-05-knowledge_curator_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): (BadRequest) Missing required query parameter: api-version\nCode: BadRequest\nMessage: Missing required query parameter: api-version"
+    }
+  ],
+  "deferred_claims": [],
+  "unresolved_assumptions": [],
+  "proposed_next_tests": [
+    "Inspect exception and rerun the failed task."
+  ]
+}
+
+## 20260605-090524-production-09111159
+
+{
+  "accepted_claims": [],
+  "rejected_claims": [
+    {
+      "claim_id": "production-01-literature_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): (BadRequest) Missing required query parameter: api-version\nCode: BadRequest\nMessage: Missing required query parameter: api-version"
+    },
+    {
+      "claim_id": "production-02-theory_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): (BadRequest) Missing required query parameter: api-version\nCode: BadRequest\nMessage: Missing required query parameter: api-version"
+    },
+    {
+      "claim_id": "production-03-falsification_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): (BadRequest) Missing required query parameter: api-version\nCode: BadRequest\nMessage: Missing required query parameter: api-version"
+    },
+    {
+      "claim_id": "production-04-experiment_bridge_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): (BadRequest) Missing required query parameter: api-version\nCode: BadRequest\nMessage: Missing required query parameter: api-version"
+    },
+    {
+      "claim_id": "production-05-knowledge_curator_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): (BadRequest) Missing required query parameter: api-version\nCode: BadRequest\nMessage: Missing required query parameter: api-version"
+    }
+  ],
+  "deferred_claims": [],
+  "unresolved_assumptions": [],
+  "proposed_next_tests": [
+    "Inspect exception and rerun the failed task."
+  ]
+}
+
+## 20260605-090607-production-e62e9007
+
+{
+  "accepted_claims": [],
+  "rejected_claims": [
+    {
+      "claim_id": "production-01-literature_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): (BadRequest) Missing required query parameter: api-version\nCode: BadRequest\nMessage: Missing required query parameter: api-version"
+    },
+    {
+      "claim_id": "production-02-theory_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): (BadRequest) Missing required query parameter: api-version\nCode: BadRequest\nMessage: Missing required query parameter: api-version"
+    },
+    {
+      "claim_id": "production-03-falsification_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): (BadRequest) Missing required query parameter: api-version\nCode: BadRequest\nMessage: Missing required query parameter: api-version"
+    },
+    {
+      "claim_id": "production-04-experiment_bridge_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): (BadRequest) Missing required query parameter: api-version\nCode: BadRequest\nMessage: Missing required query parameter: api-version"
+    },
+    {
+      "claim_id": "production-05-knowledge_curator_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): (BadRequest) Missing required query parameter: api-version\nCode: BadRequest\nMessage: Missing required query parameter: api-version"
+    }
+  ],
+  "deferred_claims": [],
+  "unresolved_assumptions": [],
+  "proposed_next_tests": [
+    "Inspect exception and rerun the failed task."
+  ]
+}
+
+## 20260605-090959-production-4e6577f0
+
+{
+  "accepted_claims": [],
+  "rejected_claims": [
+    {
+      "claim_id": "production-01-literature_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): (BadRequest) API version not supported\nCode: BadRequest\nMessage: API version not supported"
+    },
+    {
+      "claim_id": "production-02-theory_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): (BadRequest) API version not supported\nCode: BadRequest\nMessage: API version not supported"
+    },
+    {
+      "claim_id": "production-03-falsification_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): (BadRequest) API version not supported\nCode: BadRequest\nMessage: API version not supported"
+    },
+    {
+      "claim_id": "production-04-experiment_bridge_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): (BadRequest) API version not supported\nCode: BadRequest\nMessage: API version not supported"
+    },
+    {
+      "claim_id": "production-05-knowledge_curator_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): (BadRequest) API version not supported\nCode: BadRequest\nMessage: API version not supported"
+    }
+  ],
+  "deferred_claims": [],
+  "unresolved_assumptions": [],
+  "proposed_next_tests": [
+    "Inspect exception and rerun the failed task."
+  ]
+}
+
+## 20260605-091415-production-ca9f9105
+
+{
+  "accepted_claims": [],
+  "rejected_claims": [
+    {
+      "claim_id": "production-01-literature_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): (BadRequest) API version not supported\nCode: BadRequest\nMessage: API version not supported"
+    },
+    {
+      "claim_id": "production-02-theory_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): (BadRequest) API version not supported\nCode: BadRequest\nMessage: API version not supported"
+    },
+    {
+      "claim_id": "production-03-falsification_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): (BadRequest) API version not supported\nCode: BadRequest\nMessage: API version not supported"
+    },
+    {
+      "claim_id": "production-04-experiment_bridge_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): (BadRequest) API version not supported\nCode: BadRequest\nMessage: API version not supported"
+    },
+    {
+      "claim_id": "production-05-knowledge_curator_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): (BadRequest) API version not supported\nCode: BadRequest\nMessage: API version not supported"
+    }
+  ],
+  "deferred_claims": [],
+  "unresolved_assumptions": [],
+  "proposed_next_tests": [
+    "Inspect exception and rerun the failed task."
+  ]
+}
+
+## 20260605-091856-production-22c59ec3
+
+{
+  "accepted_claims": [],
+  "rejected_claims": [
+    {
+      "claim_id": "production-01-literature_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): (BadRequest) API version not supported\nCode: BadRequest\nMessage: API version not supported"
+    },
+    {
+      "claim_id": "production-02-theory_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): (BadRequest) API version not supported\nCode: BadRequest\nMessage: API version not supported"
+    },
+    {
+      "claim_id": "production-03-falsification_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): (BadRequest) API version not supported\nCode: BadRequest\nMessage: API version not supported"
+    },
+    {
+      "claim_id": "production-04-experiment_bridge_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): (BadRequest) API version not supported\nCode: BadRequest\nMessage: API version not supported"
+    },
+    {
+      "claim_id": "production-05-knowledge_curator_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=unspecified): (BadRequest) API version not supported\nCode: BadRequest\nMessage: API version not supported"
+    }
+  ],
+  "deferred_claims": [],
+  "unresolved_assumptions": [],
+  "proposed_next_tests": [
+    "Inspect exception and rerun the failed task."
+  ]
+}
+
+## 20260605-101227-production-237c788b
+
+{
+  "accepted_claims": [],
+  "rejected_claims": [
+    {
+      "claim_id": "production-01-literature_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=2): (DeploymentNotFound) The API deployment for this resource does not exist. If you created the deployment within the last 5 minutes, please wait a moment and try again.\nCode: DeploymentNotFound\nMessage: The API deployment for this resource does not exist. If you created the deployment within the last 5 minutes, please wait a moment and try again."
+    },
+    {
+      "claim_id": "production-02-theory_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=2): (DeploymentNotFound) The API deployment for this resource does not exist. If you created the deployment within the last 5 minutes, please wait a moment and try again.\nCode: DeploymentNotFound\nMessage: The API deployment for this resource does not exist. If you created the deployment within the last 5 minutes, please wait a moment and try again."
+    },
+    {
+      "claim_id": "production-03-falsification_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=2): (DeploymentNotFound) The API deployment for this resource does not exist. If you created the deployment within the last 5 minutes, please wait a moment and try again.\nCode: DeploymentNotFound\nMessage: The API deployment for this resource does not exist. If you created the deployment within the last 5 minutes, please wait a moment and try again."
+    },
+    {
+      "claim_id": "production-04-experiment_bridge_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=2): (DeploymentNotFound) The API deployment for this resource does not exist. If you created the deployment within the last 5 minutes, please wait a moment and try again.\nCode: DeploymentNotFound\nMessage: The API deployment for this resource does not exist. If you created the deployment within the last 5 minutes, please wait a moment and try again."
+    },
+    {
+      "claim_id": "production-05-knowledge_curator_agent-failed-output",
+      "text": "Subagent execution raised an exception.",
+      "reason": "RuntimeError: Foundry Agent response failed (provider=foundry_agent, agent_name=FQHE-Agent, agent_version=2): (DeploymentNotFound) The API deployment for this resource does not exist. If you created the deployment within the last 5 minutes, please wait a moment and try again.\nCode: DeploymentNotFound\nMessage: The API deployment for this resource does not exist. If you created the deployment within the last 5 minutes, please wait a moment and try again."
+    }
+  ],
+  "deferred_claims": [],
+  "unresolved_assumptions": [],
+  "proposed_next_tests": [
+    "Inspect exception and rerun the failed task."
+  ]
+}
+
+## 20260605-102544-production-d11832f1
+
+{
+  "accepted_claims": [],
+  "rejected_claims": [
+    {
+      "claim_id": "production-01-literature_agent-failed-output",
+      "text": "Output rejected by Director schema validation.",
+      "reason": "Invalid agent status: partial_success"
+    },
+    {
+      "claim_id": "production-02-theory_agent-failed-output",
+      "text": "Output rejected by Director schema validation.",
+      "reason": "Invalid agent status: completed"
+    },
+    {
+      "claim_id": "production-03-falsification_agent-failed-output",
+      "text": "Output rejected by Director schema validation.",
+      "reason": "Invalid agent status: completed"
+    },
+    {
+      "claim_id": "production-04-experiment_bridge_agent-failed-output",
+      "text": "Output rejected by Director schema validation.",
+      "reason": "Claim missing required field: claim_id"
+    },
+    {
+      "claim_id": "production-05-knowledge_curator_agent-failed-output",
+      "text": "Output rejected by Director schema validation.",
+      "reason": "Claim missing required field: text"
+    }
+  ],
+  "deferred_claims": [],
+  "unresolved_assumptions": [],
+  "proposed_next_tests": [
+    "Return output matching the required agent schema."
+  ]
+}

@@ -82,7 +82,7 @@ def test_production_environment_validation_matches_repo_contract():
     cli._validate_production_environment(
         {
             "AZURE_AI_PROJECT_ENDPOINT": "https://example.invalid",
-            "FOUNDRY_AGENT_ID": "agent",
+            "FOUNDRY_AGENT_NAME": "agent",
             "RESEARCH_REPOSITORY": "owner/repo",
         }
     )

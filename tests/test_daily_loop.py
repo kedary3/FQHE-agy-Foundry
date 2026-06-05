@@ -42,7 +42,7 @@ def test_production_mode_rejects_azure_cli_auth():
             config,
             env={
                 "AZURE_AI_PROJECT_ENDPOINT": "https://example.invalid",
-                "FOUNDRY_AGENT_ID": "agent",
+                "FOUNDRY_AGENT_NAME": "agent",
                 "RESEARCH_REPOSITORY": "owner/repo",
                 "FOUNDRY_AUTH_MODE": "azure_cli",
             },
@@ -92,6 +92,28 @@ def test_memory_collector_reads_durable_artifacts_and_github_issue_state(tmp_pat
     )
     (tmp_path / "knowledge_base" / "falsification_log.md").write_text(
         "# falsification_log\n\n## run-1\n\nRejected claims: 1\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "knowledge_base" / "theory_branch_ledger.md").write_text(
+        "\n".join(
+            [
+                "# Theory Branch Ledger",
+                "## run-1",
+                json.dumps(
+                    {
+                        "branches": [
+                            {
+                                "branch_id": "stalled-branch",
+                                "title": "Stalled candidate-state shortcut",
+                                "status": "pruned",
+                                "rationale": "Repeated unsupported assumption.",
+                                "revival_criteria": "Revive only with a specific Hamiltonian.",
+                            }
+                        ]
+                    }
+                ),
+            ]
+        ),
         encoding="utf-8",
     )
     (tmp_path / "knowledge_base" / "daily_reports" / "2026-06-01.md").write_text(
@@ -192,6 +214,8 @@ def test_memory_collector_reads_durable_artifacts_and_github_issue_state(tmp_pat
     assert "test-01-literature_agent" in signals["prior_required_agent_failures"]
     assert signals["validated_simulation_fixtures"][0]["recipe_id"] == "fixture"
     assert signals["open_github_issues"][0]["number"] == 7
+    assert memory["theory_branch_digest"][0]["status"] == "pruned"
+    assert memory["theory_branch_digest"][0]["revival_criteria"]
     assert "ghp_secretvalue" not in json.dumps(memory)
 
 
@@ -218,6 +242,15 @@ def test_director_generates_memory_aware_daily_commands():
             "open_github_issues": [{"number": 3, "title": "Follow up"}],
             "knowledge_gaps": ["Subagent execution raised an exception."],
         },
+        "theory_branch_digest": [
+            {
+                "branch_id": "finite-size-as-proof",
+                "title": "Finite-size numerics as thermodynamic proof",
+                "status": "pruned",
+                "rationale": "Overclaims finite systems.",
+                "revival_criteria": "Revive only as a falsification target.",
+            }
+        ],
         "source_index": [
             {
                 "kind": "claim_ledger",
@@ -250,8 +283,8 @@ def test_director_generates_memory_aware_daily_commands():
     director.validate_task_graph(task_graph)
 
     literature_task = task_graph["tasks"][0]
-    numerics_task = next(
-        task for task in task_graph["tasks"] if task["agent_name"] == "numerics_agent"
+    theory_task = next(
+        task for task in task_graph["tasks"] if task["agent_name"] == "theory_agent"
     )
     falsification_task = next(
         task
@@ -261,11 +294,89 @@ def test_director_generates_memory_aware_daily_commands():
 
     assert "durable memory sources" in literature_task["daily_loop_command"]
     assert "knowledge_base/claim_ledger.md" in literature_task["daily_loop_command"]
-    assert "example_laughlin" in numerics_task["daily_loop_command"]
+    assert not any(task["agent_name"] == "numerics_agent" for task in task_graph["tasks"])
+    assert theory_task["theory_branch_digest"][0]["status"] == "pruned"
+    assert task_graph["inter_agent_dialogue_summaries"][0]["status"] == "validated"
     assert "production-01-literature_agent" in " ".join(
         falsification_task["memory_triggers"]
     )
     assert literature_task["bounded_deliverables"]
+
+
+def test_director_appends_numerics_only_for_valid_theory_handoff():
+    director = Director(run_config=DailyTestRunConfig())
+    task_graph = director.generate_daily_plan("Gate numerics from theory artifacts.")
+
+    assert not any(task["agent_name"] == "numerics_agent" for task in task_graph["tasks"])
+
+    handoff = {
+        "handoff_id": "theory-1-handoff",
+        "source_task_id": "test-02-theory_agent",
+        "artifact_type": "finite_size_test",
+        "description": "Check an explicit finite-size observable.",
+        "required_numerics": "Write and execute a bounded ED verification.",
+        "evidence_label": "controlled approximation",
+    }
+    appended = director.append_numerics_tasks_from_handoffs(task_graph, [handoff])
+    director.validate_task_graph(task_graph)
+
+    assert len(appended) == 1
+    assert appended[0]["agent_name"] == "numerics_agent"
+    assert appended[0]["theory_to_numerics_handoff"]["handoff_id"] == handoff["handoff_id"]
+    assert "theory-gated-numerics" in {
+        group["group_id"] for group in task_graph["parallel_groups"]
+    }
+
+
+def test_invalid_theory_handoff_is_rejected():
+    director = Director(run_config=DailyTestRunConfig())
+
+    with pytest.raises(MalformedAgentOutput, match="Invalid theory artifact_type"):
+        director.validate_theory_to_numerics_handoff(
+            {
+                "handoff_id": "bad",
+                "source_task_id": "theory",
+                "artifact_type": "generic_idea",
+                "description": "Too vague.",
+                "required_numerics": "Run something.",
+                "evidence_label": "conjecture",
+            }
+        )
+
+
+def test_pruned_branch_update_requires_revival_criteria():
+    director = Director(run_config=DailyTestRunConfig())
+
+    with pytest.raises(MalformedAgentOutput, match="revival_criteria"):
+        director.validate_branch_update(
+            {
+                "branch_id": "branch",
+                "title": "Branch",
+                "status": "pruned",
+                "rationale": "Stalled.",
+            }
+        )
+
+
+def test_numerics_output_requires_verification_program_metadata():
+    director = Director(run_config=DailyTestRunConfig())
+
+    with pytest.raises(MalformedAgentOutput, match="verification_program"):
+        director.validate_agent_output(
+            {
+                "agent_name": "numerics_agent",
+                "agent_role": "Numerics Agent",
+                "task_id": "numerics",
+                "run_id": "run",
+                "mode": "test",
+                "status": "success",
+                "summary": "Missing verification metadata.",
+                "claims": [],
+                "artifacts": [],
+                "errors": [],
+                "next_actions": [],
+            }
+        )
 
 
 def test_parallel_runner_executes_mock_agents_concurrently(tmp_path):
@@ -355,6 +466,9 @@ def test_daily_report_and_summary_are_generated_in_test_mode(tmp_path):
     assert "TEST mode" in report
     assert "Scientific status of today's loop" in report
     assert "Durable memory sources" in report
+    assert "Theory branch ledger digest" in report
+    assert "Inter-agent dialogue summaries" in report
+    assert "Theory to numerics handoffs" in report
     assert (Path(summary["artifact_dir"]) / "memory_context.json").exists()
     task_graph = json.loads(
         (Path(summary["artifact_dir"]) / "task_graph.json").read_text(
@@ -362,6 +476,10 @@ def test_daily_report_and_summary_are_generated_in_test_mode(tmp_path):
         )
     )
     assert all(task["daily_loop_command"] for task in task_graph["tasks"])
+    assert any(task["agent_name"] == "numerics_agent" for task in task_graph["tasks"])
+    assert summary["branch_updates"]
+    assert summary["inter_agent_dialogue_summaries"]
+    assert summary["theory_to_numerics_handoffs"]
 
 
 def test_test_mode_disables_github_writes_by_default(tmp_path):

@@ -39,9 +39,11 @@ class AgentTask:
     source_refs: tuple[dict[str, Any], ...] = ()
     bounded_deliverables: tuple[str, ...] = ()
     memory_triggers: tuple[str, ...] = ()
+    theory_branch_digest: tuple[dict[str, Any], ...] = ()
+    theory_to_numerics_handoff: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        data = {
             "task_id": self.task_id,
             "agent_name": self.agent_name,
             "agent_role": self.agent_role,
@@ -54,7 +56,11 @@ class AgentTask:
             "source_refs": list(self.source_refs),
             "bounded_deliverables": list(self.bounded_deliverables),
             "memory_triggers": list(self.memory_triggers),
+            "theory_branch_digest": list(self.theory_branch_digest),
         }
+        if self.theory_to_numerics_handoff:
+            data["theory_to_numerics_handoff"] = self.theory_to_numerics_handoff
+        return data
 
 
 class Director:
@@ -79,6 +85,8 @@ class Director:
         memory = memory_context or {}
 
         task_specs = self._memory_aware_task_specs(objective, memory)[:max_tasks]
+        dialogue_summaries = self.plan_inter_agent_dialogue(objective, memory)
+        theory_branch_digest = tuple(memory.get("theory_branch_digest", []))
 
         tasks = [
             AgentTask(
@@ -93,6 +101,9 @@ class Director:
                 source_refs=tuple(spec["source_refs"]),
                 bounded_deliverables=tuple(spec["bounded_deliverables"]),
                 memory_triggers=tuple(spec["memory_triggers"]),
+                theory_branch_digest=theory_branch_digest
+                if agent_key == "theory_agent"
+                else (),
             ).to_dict()
             for idx, (agent_key, spec) in enumerate(task_specs, start=1)
         ]
@@ -101,9 +112,10 @@ class Director:
             "mode": mode,
             "objective": objective,
             "memory_context": memory,
+            "inter_agent_dialogue_summaries": dialogue_summaries,
             "parallel_groups": [
                 {
-                    "group_id": "independent-subagents",
+                    "group_id": "planning-and-theory-subagents",
                     "task_ids": [task["task_id"] for task in tasks],
                 }
             ],
@@ -133,6 +145,12 @@ class Director:
                 raise ValueError("Task source_refs must be a list.")
             if not isinstance(task["bounded_deliverables"], list):
                 raise ValueError("Task bounded_deliverables must be a list.")
+            if not isinstance(task.get("theory_branch_digest", []), list):
+                raise ValueError("Task theory_branch_digest must be a list.")
+            if task.get("theory_to_numerics_handoff") is not None:
+                self.validate_theory_to_numerics_handoff(
+                    task["theory_to_numerics_handoff"]
+                )
             if task["task_id"] in seen:
                 raise ValueError(f"Duplicate task id: {task['task_id']}")
             seen.add(task["task_id"])
@@ -166,6 +184,15 @@ class Director:
         for claim in output["claims"]:
             self._validate_claim(claim)
 
+        for update in output.get("branch_updates", []):
+            self.validate_branch_update(update)
+
+        for handoff in output.get("theory_to_numerics_handoffs", []):
+            self.validate_theory_to_numerics_handoff(handoff)
+
+        if output.get("agent_name") == "numerics_agent":
+            self.validate_numerics_verification_output(output)
+
     def mark_malformed_output(
         self,
         task: dict[str, Any],
@@ -185,6 +212,8 @@ class Director:
             "artifacts": [],
             "errors": [error],
             "next_actions": ["Return output matching the required agent schema."],
+            "branch_updates": [],
+            "theory_to_numerics_handoffs": [],
         }
 
     def classify_claims(
@@ -233,9 +262,13 @@ class Director:
         classifications = self.classify_claims(outputs)
         unresolved_assumptions = []
         proposed_next_tests = []
+        branch_updates: list[dict[str, Any]] = []
+        handoffs: list[dict[str, Any]] = []
 
         for output in outputs:
             proposed_next_tests.extend(output.get("next_actions", []))
+            branch_updates.extend(output.get("branch_updates", []))
+            handoffs.extend(output.get("theory_to_numerics_handoffs", []))
             for claim in output.get("claims", []):
                 limitations = claim.get("limitations")
                 if limitations:
@@ -251,6 +284,11 @@ class Director:
             },
             "claim_classification": classifications,
             "validation_summary": validation_summary,
+            "branch_updates": branch_updates,
+            "inter_agent_dialogue_summaries": task_graph.get(
+                "inter_agent_dialogue_summaries", []
+            ),
+            "theory_to_numerics_handoffs": handoffs,
             "scientific_status": {
                 "accepted_claims": classifications["accepted"],
                 "rejected_claims": classifications["rejected"],
@@ -259,6 +297,238 @@ class Director:
                 "proposed_next_tests": sorted(set(proposed_next_tests)),
             },
         }
+
+    def plan_inter_agent_dialogue(
+        self,
+        objective: str,
+        memory_context: dict[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
+        """Create a bounded Director-validated planning dialogue summary."""
+        memory = memory_context or {}
+        digest = memory.get("theory_branch_digest", [])
+        active_or_deferred = [
+            branch
+            for branch in digest
+            if branch.get("status") in {"active", "deferred"}
+        ][:3]
+        pruned = [branch for branch in digest if branch.get("status") == "pruned"][:3]
+
+        summary = {
+            "dialogue_id": "director-preflight-1",
+            "participants": [
+                "director_pi",
+                "theory_agent",
+                "falsification_agent",
+                "experiment_bridge_agent",
+            ],
+            "objective": objective,
+            "turn_limit": 6,
+            "summary": (
+                "Bounded pre-execution planning asks theory to avoid pruned "
+                "branches unless revival criteria are met, falsification to "
+                "challenge hidden assumptions, and experiment bridge to define "
+                "observable handoffs."
+            ),
+            "turns": [
+                {
+                    "speaker": "theory_agent",
+                    "message": (
+                        "Use the branch digest to avoid pruned candidate-consensus "
+                        "and finite-size-proof avenues unless their revival criteria "
+                        "are explicitly satisfied."
+                    ),
+                },
+                {
+                    "speaker": "falsification_agent",
+                    "message": (
+                        "Challenge any handoff that lacks a specified Hamiltonian "
+                        "perturbation, observable, ansatz, or finite-size test."
+                    ),
+                },
+                {
+                    "speaker": "experiment_bridge_agent",
+                    "message": (
+                        "Prefer handoffs tied to observables or sample effects that "
+                        "could later be compared with gap, charge, thermal Hall, "
+                        "interferometry, disorder, or finite-width constraints."
+                    ),
+                },
+                {
+                    "speaker": "director_pi",
+                    "message": (
+                        "The Director will validate dialogue output, create the final "
+                        "task graph, and instantiate numerics only after a credible "
+                        "theory artifact is received."
+                    ),
+                },
+            ],
+            "refined_goal": (
+                "Generate evidence-labeled theory work that either updates the "
+                "branch ledger or produces a concrete artifact eligible for a "
+                "theory-gated numerics handoff."
+            ),
+            "assumption_challenges": [
+                "Do not treat finite-size trends as thermodynamic proof.",
+                "Do not revive pruned avenues without explicit revival criteria.",
+            ],
+            "handoff_rules": [
+                "Numerics may be created only from a Director-validated theory artifact.",
+                "A valid handoff must name a Hamiltonian perturbation, observable, ansatz, or finite-size test.",
+            ],
+            "active_or_deferred_branches": active_or_deferred,
+            "pruned_branches_to_avoid": pruned,
+            "status": "validated",
+        }
+        self.validate_inter_agent_dialogue_summary(summary)
+        return [summary]
+
+    def validate_inter_agent_dialogue_summary(self, summary: dict[str, Any]) -> None:
+        for field in (
+            "dialogue_id",
+            "participants",
+            "summary",
+            "turns",
+            "refined_goal",
+            "assumption_challenges",
+            "handoff_rules",
+            "status",
+        ):
+            if field not in summary or summary[field] in (None, "", []):
+                raise ValueError(
+                    f"Inter-agent dialogue summary missing required field: {field}"
+                )
+        if summary["status"] != "validated":
+            raise ValueError("Inter-agent dialogue summary must be Director-validated.")
+
+    def validate_branch_update(self, update: dict[str, Any]) -> None:
+        for field in ("branch_id", "title", "status", "rationale"):
+            if field not in update or update[field] in (None, ""):
+                raise MalformedAgentOutput(
+                    f"Branch update missing required field: {field}"
+                )
+        if update["status"] not in {"active", "deferred", "pruned", "validated"}:
+            raise MalformedAgentOutput(
+                f"Invalid branch update status: {update['status']}"
+            )
+        if update["status"] == "pruned" and not update.get("revival_criteria"):
+            raise MalformedAgentOutput(
+                "Pruned branch update requires revival_criteria."
+            )
+
+    def validate_theory_to_numerics_handoff(self, handoff: dict[str, Any]) -> None:
+        for field in (
+            "handoff_id",
+            "source_task_id",
+            "artifact_type",
+            "description",
+            "required_numerics",
+            "evidence_label",
+        ):
+            if field not in handoff or handoff[field] in (None, "", []):
+                raise MalformedAgentOutput(
+                    f"Theory-to-numerics handoff missing required field: {field}"
+                )
+        if handoff["artifact_type"] not in {
+            "hamiltonian_perturbation",
+            "observable",
+            "ansatz",
+            "finite_size_test",
+        }:
+            raise MalformedAgentOutput(
+                f"Invalid theory artifact_type: {handoff['artifact_type']}"
+            )
+        if handoff["evidence_label"] not in EVIDENCE_TYPES:
+            raise MalformedAgentOutput(
+                f"Invalid handoff evidence_label: {handoff['evidence_label']}"
+            )
+
+    def validate_numerics_verification_output(self, output: dict[str, Any]) -> None:
+        program = output.get("verification_program")
+        if not isinstance(program, dict):
+            raise MalformedAgentOutput(
+                "Numerics output missing required verification_program object."
+            )
+        for field in ("description", "path", "status"):
+            if field not in program or program[field] in (None, ""):
+                raise MalformedAgentOutput(
+                    f"Numerics verification_program missing required field: {field}"
+                )
+        if program["status"] not in {"designed", "written", "executed", "reported"}:
+            raise MalformedAgentOutput(
+                f"Invalid numerics verification_program status: {program['status']}"
+            )
+
+        metadata = output.get("execution_metadata")
+        if not isinstance(metadata, dict):
+            raise MalformedAgentOutput(
+                "Numerics output missing required execution_metadata object."
+            )
+        for field in (
+            "geometry",
+            "n_particles",
+            "n_flux",
+            "shift",
+            "basis_dimension",
+            "solver",
+            "convergence_status",
+            "tolerance",
+        ):
+            if field not in metadata or metadata[field] in (None, ""):
+                raise MalformedAgentOutput(
+                    f"Numerics execution_metadata missing required field: {field}"
+                )
+
+    def extract_valid_theory_handoffs(
+        self,
+        outputs: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        handoffs: list[dict[str, Any]] = []
+        for output in outputs:
+            if output.get("agent_name") != "theory_agent":
+                continue
+            if output.get("status") == "failed":
+                continue
+            for handoff in output.get("theory_to_numerics_handoffs", []):
+                self.validate_theory_to_numerics_handoff(handoff)
+                handoffs.append(handoff)
+        return handoffs
+
+    def append_numerics_tasks_from_handoffs(
+        self,
+        task_graph: dict[str, Any],
+        handoffs: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        """Append numerics tasks only for credible Director-validated theory artifacts."""
+        if not handoffs:
+            return []
+
+        existing_ids = {task["task_id"] for task in task_graph.get("tasks", [])}
+        appended = []
+        mode = task_graph.get("mode", self.run_config.mode if self.run_config else "test")
+        start_idx = len(task_graph.get("tasks", [])) + 1
+        for offset, handoff in enumerate(handoffs, start=0):
+            task_id = f"{mode}-{start_idx + offset:02d}-numerics_agent"
+            if task_id in existing_ids:
+                continue
+            task = self._build_numerics_task_from_handoff(
+                task_id=task_id,
+                objective=task_graph["objective"],
+                handoff=handoff,
+            )
+            appended.append(task)
+            task_graph.setdefault("tasks", []).append(task)
+
+        if appended:
+            task_graph.setdefault("parallel_groups", []).append(
+                {
+                    "group_id": "theory-gated-numerics",
+                    "task_ids": [task["task_id"] for task in appended],
+                    "depends_on": sorted(
+                        {handoff["source_task_id"] for handoff in handoffs}
+                    ),
+                }
+            )
+        return appended
 
     def _validate_claim(self, claim: dict[str, Any]) -> None:
         for field in (
@@ -384,34 +654,6 @@ class Director:
                         "At most three analytical checks with exact or approximation status.",
                         "Explicit assumptions for finite width, LL mixing, disorder, or spin.",
                         "One falsifiable consequence for the next loop.",
-                    ),
-                ),
-            ),
-            (
-                "numerics_agent",
-                self._build_task_spec(
-                    agent_key="numerics_agent",
-                    fallback_role="Numerics Agent",
-                    objective=objective,
-                    focus=(
-                        "Use prior validation summaries, simulation recipes, and fixture "
-                        "results to select the next bounded numerical action. Preserve "
-                        "finite-size caveats and do not convert the Laughlin fixture into "
-                        "ν=5/2 evidence."
-                    ),
-                    memory_context=memory_context,
-                    source_kinds=(
-                        "simulation_result",
-                        "simulation_recipe",
-                        "run_summary",
-                        "daily_report",
-                    ),
-                    triggers=common_triggers
-                    + _compact_triggers(_fixture_names(fixtures) + _recipe_names(recipes)),
-                    deliverables=(
-                        "Validate or propose one small deterministic ED recipe.",
-                        "Report geometry, particle number, flux, shift, basis size, solver, and tolerance.",
-                        "State why the result is finite-size numerical evidence only.",
                     ),
                 ),
             ),
@@ -580,9 +822,82 @@ class Director:
                 "Escalate or mark partial/failed when: " + "; ".join(escalation)
             )
         instructions.append(
-            "Return only schema-valid JSON with agent_name, agent_role, task_id, run_id, mode, status, summary, claims, artifacts, errors, and next_actions."
+            "Return only schema-valid JSON with agent_name, agent_role, task_id, run_id, mode, status, summary, claims, artifacts, errors, next_actions, and optional branch_updates plus theory_to_numerics_handoffs."
         )
         return instructions
+
+    def _build_numerics_task_from_handoff(
+        self,
+        *,
+        task_id: str,
+        objective: str,
+        handoff: dict[str, Any],
+    ) -> dict[str, Any]:
+        config = self.agent_configs.get("numerics_agent", {})
+        role = config.get("role", "Numerics Agent")
+        deliverables = (
+            "Design the smallest verification program that tests the supplied theory artifact.",
+            "Write or identify the executable recipe/program and record the artifact path.",
+            "Execute the bounded verification when allowed by mode and budget.",
+            "Report geometry, particle number, flux, shift, basis size, solver, convergence, tolerance, and limitations.",
+            "Label every conclusion as finite-size numerical evidence, exact finite-Hamiltonian result, or another allowed evidence label.",
+        )
+        command = (
+            f"{role} gated command: advance '{objective}' only through Director "
+            f"handoff `{handoff['handoff_id']}` from `{handoff['source_task_id']}`. "
+            f"Theory artifact type: {handoff['artifact_type']}. Description: "
+            f"{handoff['description']} Required numerics: {handoff['required_numerics']}. "
+            "Do not run exploratory numerics outside this handoff."
+        )
+        return AgentTask(
+            task_id=task_id,
+            agent_name="numerics_agent",
+            agent_role=role,
+            objective=objective,
+            allowed_inputs=(
+                "theory_to_numerics_handoff",
+                "simulation_fixture",
+                "simulation_recipe",
+                "durable_memory_context",
+            ),
+            expected_outputs=(
+                "verification_program",
+                "simulation_result",
+                "claims",
+                "artifacts",
+            ),
+            daily_loop_command=command,
+            skill_instructions=tuple(
+                self._skill_instructions(
+                    agent_key="numerics_agent",
+                    role=role,
+                    allowed_inputs=(
+                        "theory_to_numerics_handoff",
+                        "simulation_fixture",
+                        "simulation_recipe",
+                        "durable_memory_context",
+                    ),
+                    expected_outputs=(
+                        "verification_program",
+                        "simulation_result",
+                        "claims",
+                        "artifacts",
+                    ),
+                )
+            ),
+            source_refs=(
+                {
+                    "kind": "theory_to_numerics_handoff",
+                    "path": None,
+                    "summary": handoff["description"],
+                },
+            ),
+            bounded_deliverables=deliverables,
+            memory_triggers=(
+                f"Director accepted theory handoff {handoff['handoff_id']}.",
+            ),
+            theory_to_numerics_handoff=handoff,
+        ).to_dict()
 
 
 def _select_source_refs(

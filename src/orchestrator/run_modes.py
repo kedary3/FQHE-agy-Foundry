@@ -92,7 +92,7 @@ class ProductionRunConfig(BaseRunConfig):
     use_live_foundry: bool = True
     required_env: tuple[str, ...] = (
         "AZURE_AI_PROJECT_ENDPOINT",
-        "FOUNDRY_AGENT_ID",
+        "FOUNDRY_AGENT_NAME",
         "RESEARCH_REPOSITORY",
     )
     allow_dummy_env: bool = False

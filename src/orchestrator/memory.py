@@ -59,6 +59,7 @@ class DurableMemoryCollector:
                 "open_github_issues": [],
                 "knowledge_gaps": [],
             },
+            "theory_branch_digest": [],
         }
 
         self._collect_knowledge_base(context)
@@ -73,6 +74,7 @@ class DurableMemoryCollector:
         kb_root = self.workspace_path / "knowledge_base"
         claim_ledger = kb_root / "claim_ledger.md"
         falsification_log = kb_root / "falsification_log.md"
+        theory_branch_ledger = kb_root / "theory_branch_ledger.md"
         daily_reports_root = kb_root / "daily_reports"
 
         context["sources"]["claim_ledger"] = self._summarize_claim_ledger(claim_ledger)
@@ -92,6 +94,19 @@ class DurableMemoryCollector:
             kind="falsification_log",
             path=falsification_log,
             summary=context["sources"]["falsification_log"].get("summary", ""),
+        )
+
+        context["sources"]["theory_branch_ledger"] = self._summarize_theory_branch_ledger(
+            theory_branch_ledger
+        )
+        context["theory_branch_digest"] = context["sources"][
+            "theory_branch_ledger"
+        ].get("digest", [])
+        self._add_source(
+            context,
+            kind="theory_branch_ledger",
+            path=theory_branch_ledger,
+            summary=context["sources"]["theory_branch_ledger"].get("summary", ""),
         )
 
         daily_reports = []
@@ -369,6 +384,65 @@ class DurableMemoryCollector:
             "recent_excerpt": text,
         }
 
+    def _summarize_theory_branch_ledger(self, path: Path) -> dict[str, Any]:
+        if not path.exists():
+            return {
+                "path": self._rel(path),
+                "exists": False,
+                "summary": "Theory branch ledger is missing.",
+                "digest": [],
+            }
+
+        text = self._read_text(path, tail=True)
+        objects = _extract_json_objects(text)
+        entries = []
+        for item in objects:
+            raw_entries = item.get("branches", [])
+            if isinstance(raw_entries, list):
+                entries.extend(entry for entry in raw_entries if isinstance(entry, dict))
+            if all(
+                key in item
+                for key in ("branch_id", "title", "status", "rationale")
+            ):
+                entries.append(item)
+
+        if not entries:
+            entries = _extract_branch_table_rows(text)
+
+        digest = []
+        for entry in entries:
+            status = entry.get("status")
+            if status not in {"active", "deferred", "pruned", "validated"}:
+                continue
+            digest.append(
+                {
+                    "branch_id": sanitize_text(str(entry.get("branch_id", "")))[:80],
+                    "title": sanitize_text(str(entry.get("title", "")))[:160],
+                    "status": status,
+                    "rationale": sanitize_text(str(entry.get("rationale", "")))[:220],
+                    "revival_criteria": sanitize_text(
+                        str(entry.get("revival_criteria", ""))
+                    )[:220],
+                }
+            )
+
+        digest = _dedupe_dicts(digest, key_fields=("branch_id", "title"))[:12]
+        counts = {status: 0 for status in ("active", "deferred", "pruned", "validated")}
+        for entry in digest:
+            counts[entry["status"]] += 1
+        return {
+            "path": self._rel(path),
+            "exists": True,
+            "summary": (
+                "Theory branch ledger contains "
+                f"{counts['active']} active, {counts['deferred']} deferred, "
+                f"{counts['pruned']} pruned, and {counts['validated']} validated branches "
+                "in the bounded digest."
+            ),
+            "digest": digest,
+            "recent_excerpt": text,
+        }
+
     def _summarize_markdown(self, path: Path, kind: str) -> dict[str, Any]:
         text = self._read_text(path)
         headings = [
@@ -632,6 +706,27 @@ def _section_bullets(text: str, heading: str) -> list[str]:
         if in_section and stripped.startswith("- "):
             bullets.append(sanitize_text(stripped[2:].strip()))
     return bullets
+
+
+def _extract_branch_table_rows(text: str) -> list[dict[str, Any]]:
+    rows = []
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped.startswith("|") or "branch_id" in stripped.lower():
+            continue
+        cells = [cell.strip() for cell in stripped.strip("|").split("|")]
+        if len(cells) < 5 or set(cells[0]) <= {"-"}:
+            continue
+        rows.append(
+            {
+                "branch_id": cells[0],
+                "title": cells[1],
+                "status": cells[2].lower(),
+                "rationale": cells[3],
+                "revival_criteria": cells[4],
+            }
+        )
+    return rows
 
 
 def _dedupe_strings(values: list[Any]) -> list[str]:

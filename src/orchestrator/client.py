@@ -1,38 +1,55 @@
-# File: src/orchestrator/client.py
 """LLM provider adapter for local and managed research agents."""
 
 from __future__ import annotations
 
 import logging
 import os
+import re
 from pathlib import Path
-from typing import Iterable
+from typing import Any, Iterable
+from urllib.parse import quote
 
 try:
     from dotenv import load_dotenv
 except ModuleNotFoundError:  # pragma: no cover - exercised in minimal test envs.
+
     def load_dotenv(dotenv_path=None, override=False, **kwargs):
         path = Path(dotenv_path or Path.cwd() / ".env")
         if not path.exists():
             return False
+
         for raw_line in path.read_text(encoding="utf-8").splitlines():
             line = raw_line.strip()
             if not line or line.startswith("#") or "=" not in line:
                 continue
+
             name, value = line.split("=", 1)
             name = name.strip()
             value = value.strip().strip("'\"")
+
             if not name:
                 continue
+
             if override or name not in os.environ:
                 os.environ[name] = value
+
         return True
+
 
 logger = logging.getLogger("orchestrator.client")
 
 
 class ProviderConfigurationError(RuntimeError):
     """Raised when a provider is selected but required configuration is absent."""
+
+
+SECRET_VALUE_RE = re.compile(
+    r"\b(?:gh[pousr]_[A-Za-z0-9_]+|sk-[A-Za-z0-9]{12,}|AIza[0-9A-Za-z_\-]{20,})\b"
+)
+SECRET_ASSIGNMENT_RE = re.compile(
+    r"\b([A-Z0-9_]*(?:TOKEN|KEY|SECRET|PASSWORD|CONNECTION_STRING)[A-Z0-9_]*)\s*[:=]\s*([^\s,;\"'\]\}]+)"
+)
+BEARER_RE = re.compile(r"\bBearer\s+[A-Za-z0-9._\-+/=]+", re.IGNORECASE)
 
 
 def _load_environment(override: bool = False) -> None:
@@ -50,6 +67,7 @@ def _require_env(name: str) -> str:
         raise ProviderConfigurationError(
             f"Missing required environment variable: {name}"
         )
+
     return value.strip()
 
 
@@ -70,7 +88,8 @@ def _foundry_credential():
 
     if auth_mode not in {"default", "environment", "azure_cli"}:
         raise ProviderConfigurationError(
-            "Unsupported FOUNDRY_AUTH_MODE. Use 'default', 'environment', or 'azure_cli'."
+            "Unsupported FOUNDRY_AUTH_MODE. Use 'default', 'environment', or "
+            "'azure_cli'."
         )
 
     try:
@@ -81,30 +100,34 @@ def _foundry_credential():
             ManagedIdentityCredential,
         )
     except ImportError as exc:
-        class EnvironmentCredential:
-            pass
-
-        class ManagedIdentityCredential:
-            pass
-
-        class AzureCliCredential:
-            pass
-
-        class ChainedTokenCredential:
-            def __init__(self, *credentials):
-                self.credentials = credentials
-
-            missing_dependency = "azure-identity"
+        raise ImportError(
+            "Provider 'foundry_agent' requires package 'azure-identity'."
+        ) from exc
 
     # Prefer explicit environment credentials first, then managed identity.
     # Allow Azure CLI credentials only when explicitly requested.
     credentials = [EnvironmentCredential(), ManagedIdentityCredential()]
+
     if auth_mode == "azure_cli":
         logger.warning(
-            "FOUNDRY_AUTH_MODE=azure_cli will also consult Azure CLI cached login credentials."
+            "FOUNDRY_AUTH_MODE=azure_cli will also consult Azure CLI cached login "
+            "credentials."
         )
         credentials.append(AzureCliCredential())
+
     return ChainedTokenCredential(*credentials)
+
+
+def _sanitize_error_text(value: Any) -> str:
+    text = str(value)
+    text = re.sub(r"://([^/\s:@]+):([^@\s/]+)@", r"://<redacted>:<redacted>@", text)
+    text = BEARER_RE.sub("Bearer <redacted>", text)
+    text = SECRET_VALUE_RE.sub("<redacted>", text)
+    text = SECRET_ASSIGNMENT_RE.sub(
+        lambda match: f"{match.group(1)}=<redacted>",
+        text,
+    )
+    return text
 
 
 class LLMAdapter:
@@ -131,7 +154,11 @@ class LLMAdapter:
         self.provider = (provider or os.environ.get("LLM_PROVIDER", "gemini")).lower()
         self.api_key = api_key
         self.client = None
-        self._agent_id = None
+        self._project_client = None
+        self._foundry_endpoint = None
+        self._foundry_agent_name = None
+        self._foundry_agent_version = None
+        self._foundry_api_version = None
 
         if self.provider not in self.SUPPORTED_PROVIDERS:
             supported = ", ".join(sorted(self.SUPPORTED_PROVIDERS))
@@ -211,20 +238,35 @@ class LLMAdapter:
 
     def _init_foundry_agent(self) -> None:
         endpoint = _require_env("AZURE_AI_PROJECT_ENDPOINT")
-        self._agent_id = _require_env("FOUNDRY_AGENT_ID")
+        self._foundry_endpoint = endpoint.rstrip("/")
+        self._foundry_agent_name = _require_env("FOUNDRY_AGENT_NAME")
+        self._foundry_agent_version = os.environ.get("FOUNDRY_AGENT_VERSION")
+        self._foundry_api_version = os.environ.get(
+            "FOUNDRY_AGENT_API_VERSION",
+            "v1",
+        ).strip()
+
+        if self._foundry_agent_version is not None:
+            self._foundry_agent_version = self._foundry_agent_version.strip() or None
+        if not self._foundry_api_version:
+            raise ProviderConfigurationError(
+                "FOUNDRY_AGENT_API_VERSION must not be empty."
+            )
 
         try:
-            from azure.ai.agents import AgentsClient
+            from azure.ai.projects import AIProjectClient
         except ImportError as exc:
             raise ImportError(
                 "Provider 'foundry_agent' requires packages "
-                "'azure-ai-agents' and 'azure-identity'."
+                "'azure-ai-projects>=2.1.0', 'openai', and 'azure-identity'."
             ) from exc
 
-        self.client = AgentsClient(
+        self._project_client = AIProjectClient(
             endpoint=endpoint,
             credential=_foundry_credential(),
+            allow_preview=True,
         )
+        self.client = self._project_client
         logger.info("Initialized Foundry Agent provider.")
 
     def generate_text(
@@ -315,47 +357,101 @@ class LLMAdapter:
         prompt: str,
         system_instruction: str | None = None,
     ) -> str:
-        content = prompt if not system_instruction else f"{system_instruction}\n\n{prompt}"
-
-        agents = getattr(self.client, "agents", self.client)
-        thread = agents.threads.create()
-
-        agents.messages.create(
-            thread_id=thread.id,
-            role="user",
-            content=content,
+        content = (
+            prompt
+            if not system_instruction
+            else f"{system_instruction}\n\n{prompt}"
         )
+        request: dict[str, Any] = {"input": content}
 
-        run = agents.runs.create_and_process(
-            thread_id=thread.id,
-            agent_id=self._agent_id,
+        try:
+            from azure.core.rest import HttpRequest
+
+            response = self.client.send_request(
+                HttpRequest(
+                    "POST",
+                    self._foundry_agent_responses_url(),
+                    params={"api-version": self._foundry_api_version},
+                    headers={"Content-Type": "application/json"},
+                    json=request,
+                )
+            )
+            response.raise_for_status()
+            return self._extract_foundry_response_text(response.json())
+
+        except Exception as exc:
+            agent_version = self._foundry_agent_version or "latest"
+            error = _sanitize_error_text(exc)
+            raise RuntimeError(
+                "Foundry Agent response failed "
+                f"(provider=foundry_agent, agent_name={self._foundry_agent_name}, "
+                f"agent_version={agent_version}): {error}"
+            ) from exc
+
+    def _foundry_agent_responses_url(self) -> str:
+        """Return the portal-displayed Responses endpoint."""
+        if not self._foundry_endpoint or not self._foundry_agent_name:
+            raise ProviderConfigurationError(
+                "Foundry agent provider is not initialized."
+            )
+
+        agent_name = quote(self._foundry_agent_name, safe="")
+        return (
+            f"{self._foundry_endpoint}/agents/{agent_name}/"
+            "endpoint/protocols/openai/responses"
         )
-
-        if getattr(run, "status", None) == "failed":
-            error = getattr(run, "last_error", None)
-            raise RuntimeError(f"Foundry Agent run failed: {error}")
-
-        messages = agents.messages.list(thread_id=thread.id)
-
-        for message in messages:
-            if getattr(message, "role", None) != "assistant":
-                continue
-
-            text = self._extract_foundry_message_text(message)
-            if text:
-                return text
-
-        return ""
 
     @staticmethod
-    def _extract_foundry_message_text(message) -> str:
-        parts = []
+    def _extract_foundry_response_text(response: Any) -> str:
+        if isinstance(response, dict):
+            output_text = response.get("output_text")
+            if output_text:
+                return str(output_text)
 
-        for item in getattr(message, "content", []) or []:
-            text_obj = getattr(item, "text", None)
-            value = getattr(text_obj, "value", None)
+            parts: list[str] = []
+            _collect_response_text(response.get("output"), parts)
+            return "\n".join(part for part in parts if part)
 
-            if value:
-                parts.append(value)
+        output_text = getattr(response, "output_text", None)
+        if output_text:
+            return str(output_text)
 
-        return "\n".join(parts)
+        parts: list[str] = []
+        _collect_response_text(getattr(response, "output", None), parts)
+        return "\n".join(part for part in parts if part)
+
+
+def _collect_response_text(value: Any, parts: list[str]) -> None:
+    if value is None:
+        return
+
+    if isinstance(value, str):
+        parts.append(value)
+        return
+
+    if isinstance(value, (list, tuple)):
+        for item in value:
+            _collect_response_text(item, parts)
+        return
+
+    if isinstance(value, dict):
+        for key in ("text", "content", "output_text", "value"):
+            if key in value:
+                _collect_response_text(value[key], parts)
+        return
+
+    text = getattr(value, "text", None)
+    if text is not None:
+        _collect_response_text(text, parts)
+
+    content = getattr(value, "content", None)
+    if content is not None:
+        _collect_response_text(content, parts)
+
+    output_text = getattr(value, "output_text", None)
+    if output_text is not None:
+        _collect_response_text(output_text, parts)
+
+    nested_value = getattr(value, "value", None)
+    if nested_value is not None:
+        _collect_response_text(nested_value, parts)

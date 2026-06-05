@@ -93,6 +93,38 @@ class DailyLoopRunner:
                 validated_outputs.append(malformed)
                 failures.append(f"{task.get('task_id')}: {exc}")
 
+        handoffs = director.extract_valid_theory_handoffs(validated_outputs)
+        numerics_tasks = director.append_numerics_tasks_from_handoffs(
+            task_graph,
+            handoffs,
+        )
+        if numerics_tasks:
+            for task in numerics_tasks:
+                task["mode"] = self.mode
+                task["run_id"] = run_id
+            director.validate_task_graph(task_graph)
+            numerics_outputs, numerics_ledger = runner.run(
+                numerics_tasks,
+                self._execute_agent_task,
+            )
+            outputs.extend(numerics_outputs)
+            ledger.extend(numerics_ledger)
+            ledger.sort(key=lambda item: item.get("task_id", ""))
+            for output in numerics_outputs:
+                task = _task_by_id(task_graph, output.get("task_id"))
+                try:
+                    director.validate_agent_output(output)
+                    validated_outputs.append(output)
+                except MalformedAgentOutput as exc:
+                    malformed = director.mark_malformed_output(
+                        task=task,
+                        run_id=run_id,
+                        mode=self.mode,
+                        error=str(exc),
+                    )
+                    validated_outputs.append(malformed)
+                    failures.append(f"{task.get('task_id')}: {exc}")
+
         validation_summary = self._run_physics_checks()
         if validation_summary["status"] != "success":
             failures.append("Physics validation failed.")
@@ -190,6 +222,13 @@ class DailyLoopRunner:
             "failures": failures,
             "warnings": warnings,
             "scientific_status": synthesis["scientific_status"],
+            "branch_updates": synthesis.get("branch_updates", []),
+            "inter_agent_dialogue_summaries": synthesis.get(
+                "inter_agent_dialogue_summaries", []
+            ),
+            "theory_to_numerics_handoffs": synthesis.get(
+                "theory_to_numerics_handoffs", []
+            ),
         }
         artifact_paths.append(str(write_json(run_dir / "run_summary.json", summary)))
 
@@ -221,6 +260,8 @@ class DailyLoopRunner:
             "source_refs": task["source_refs"],
             "bounded_deliverables": task["bounded_deliverables"],
             "memory_triggers": task.get("memory_triggers", []),
+            "theory_branch_digest": task.get("theory_branch_digest", []),
+            "theory_to_numerics_handoff": task.get("theory_to_numerics_handoff"),
             "expected_outputs": task.get("expected_outputs", []),
         }
         prompt = (
@@ -338,6 +379,9 @@ class DailyLoopRunner:
 
         claim_ledger_path = self.workspace_path / "knowledge_base" / "claim_ledger.md"
         falsification_path = self.workspace_path / "knowledge_base" / "falsification_log.md"
+        branch_ledger_path = (
+            self.workspace_path / "knowledge_base" / "theory_branch_ledger.md"
+        )
         _append_markdown_section(
             claim_ledger_path,
             f"## {run_id}\n\n"
@@ -349,7 +393,20 @@ class DailyLoopRunner:
             f"## {run_id}\n\nRejected claims: "
             f"{len(synthesis['scientific_status']['rejected_claims'])}\n",
         )
+        branch_artifacts = []
+        if synthesis.get("branch_updates"):
+            _append_markdown_section(
+                branch_ledger_path,
+                f"## {run_id}\n\n"
+                + json.dumps(
+                    {"branches": synthesis.get("branch_updates", [])},
+                    indent=2,
+                )
+                + "\n",
+            )
+            branch_artifacts.append(str(branch_ledger_path))
         artifact_paths.extend([str(claim_ledger_path), str(falsification_path)])
+        artifact_paths.extend(branch_artifacts)
 
     def _update_github(self, report: str) -> list[str]:
         if self.github_client is None:
@@ -424,7 +481,7 @@ def _fixture_agent_output(task: dict[str, Any]) -> dict[str, Any]:
     if "falsification" in task["agent_name"]:
         evidence = "phenomenological argument"
 
-    return {
+    output = {
         "agent_name": task["agent_name"],
         "agent_role": task["agent_role"],
         "task_id": task["task_id"],
@@ -450,7 +507,78 @@ def _fixture_agent_output(task: dict[str, Any]) -> dict[str, Any]:
         "next_actions": [
             "Promote only after production mode validates live Foundry and GitHub gates."
         ],
+        "branch_updates": [],
+        "theory_to_numerics_handoffs": [],
     }
+
+    if task["agent_name"] == "theory_agent":
+        output["branch_updates"] = [
+            {
+                "branch_id": "finite-width-llm-perturbation",
+                "title": "Finite-width and Landau-level-mixing perturbation check",
+                "status": "active",
+                "rationale": (
+                    "A bounded Hamiltonian perturbation can be specified without "
+                    "assuming a candidate state is correct."
+                ),
+                "revival_criteria": "",
+            }
+        ]
+        output["theory_to_numerics_handoffs"] = [
+            {
+                "handoff_id": f"{task['task_id']}-handoff-1",
+                "source_task_id": task["task_id"],
+                "artifact_type": "hamiltonian_perturbation",
+                "description": (
+                    "Compare the small Laughlin fixture Hamiltonian with an explicit "
+                    "bounded delta-V1 pseudopotential perturbation as an orchestration "
+                    "verification program, not as ν=5/2 evidence."
+                ),
+                "required_numerics": (
+                    "Design, write, execute, and report a deterministic finite-size "
+                    "fixture check that records solver metadata and finite-size caveats."
+                ),
+                "evidence_label": "controlled approximation",
+            }
+        ]
+
+    if task["agent_name"] == "numerics_agent":
+        handoff = task.get("theory_to_numerics_handoff", {})
+        output["summary"] = (
+            "Completed deterministic gated Numerics Agent fixture task for "
+            f"handoff `{handoff.get('handoff_id', 'unknown')}`."
+        )
+        output["claims"][0]["text"] = (
+            "The gated numerics fixture verifies that a Director-approved theory "
+            "handoff can produce a bounded finite-size verification report; it is "
+            "not thermodynamic ν=5/2 evidence."
+        )
+        output["artifacts"] = [
+            {
+                "path": "simulations/results/result_example_laughlin.json",
+                "type": "simulation_output",
+            }
+        ]
+        output["verification_program"] = {
+            "description": (
+                "Use the existing deterministic Laughlin fixture result as the "
+                "bounded verification program for orchestration plumbing."
+            ),
+            "path": "simulations/results/result_example_laughlin.json",
+            "status": "reported",
+        }
+        output["execution_metadata"] = {
+            "geometry": "sphere",
+            "n_particles": 3,
+            "n_flux": 6,
+            "shift": 3,
+            "basis_dimension": 5,
+            "solver": "scipy.sparse.linalg.eigsh",
+            "convergence_status": "success",
+            "tolerance": 1e-10,
+        }
+
+    return output
 
 
 def _new_run_id(mode: str) -> str:

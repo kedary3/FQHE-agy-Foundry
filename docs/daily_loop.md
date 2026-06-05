@@ -33,8 +33,11 @@ python3 -m src.orchestrator.cli --run --mode production
 
 Production mode:
 
-- requires `AZURE_AI_PROJECT_ENDPOINT`, `FOUNDRY_AGENT_ID`, and `RESEARCH_REPOSITORY`
-- uses the configured Foundry agent through `src/orchestrator/client.py`
+- requires `AZURE_AI_PROJECT_ENDPOINT`, `FOUNDRY_AGENT_NAME`, and `RESEARCH_REPOSITORY`
+- may use optional `FOUNDRY_AGENT_VERSION` when a specific Foundry agent version is required
+- may use optional `FOUNDRY_AGENT_API_VERSION`; defaults to `v1`
+- uses the configured Foundry agent through `AIProjectClient.send_request(...)` against the Azure project agent protocol endpoint
+- routes to `/agents/<agent-name>/endpoint/protocols/openai/responses?api-version=<version>`, so the runtime does not parse a model name
 - dispatches specialized subagent tasks under the Director
 - writes artifacts under `artifacts/production/<run_id>/`
 - writes durable reports and ledgers under `knowledge_base/`
