@@ -83,3 +83,23 @@ Rejected claims: 5
 ## 20260605-102544-production-d11832f1
 
 Rejected claims: 5
+
+## 20260605-203104-production-64b662d8
+
+Rejected claims: 5
+
+## 20260606-013312-production-2142bf76
+
+Rejected claims: 5
+
+## 20260606-014329-production-498c0b0b
+
+Rejected claims: 5
+
+## 20260606-014742-production-1f0514a7
+
+Rejected claims: 2
+
+## 20260608-050058-production-4e6db6f7
+
+Rejected claims: 0

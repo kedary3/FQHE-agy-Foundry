@@ -47,7 +47,7 @@ class TestRunConfig(BaseRunConfig):
     mode: str = "test"
     foundry_provider: str = "stub"
     foundry_model: str | None = "fixture-model"
-    max_task_count: int = 4
+    max_task_count: int = 5
     max_parallel_agents: int = 2
     write_permissions: bool = False
     artifact_root: Path = Path("artifacts/test")

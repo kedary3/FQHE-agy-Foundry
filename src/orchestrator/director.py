@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
 from .run_modes import BaseRunConfig
+from .memory import sanitize_text
 
 
 EVIDENCE_TYPES = {
@@ -19,6 +21,91 @@ EVIDENCE_TYPES = {
 }
 
 CLAIM_DISPOSITIONS = {"accepted", "rejected", "deferred"}
+
+# Canonical agent output schema embedded for prompt injection and test validation.
+AGENT_OUTPUT_SCHEMA = {
+    "required_top_level_fields": [
+        "agent_name", "agent_role", "task_id", "run_id", "mode",
+        "status", "summary", "claims", "artifacts", "errors", "next_actions",
+    ],
+    "valid_status_values": ["success", "partial", "failed"],
+    "claim_required_fields": [
+        "claim_id", "text", "evidence_type", "support", "limitations", "confidence",
+    ],
+    "valid_evidence_types": sorted(EVIDENCE_TYPES),
+    "valid_confidence_values": ["low", "medium", "high"],
+}
+
+# Aliases: keys LLMs commonly emit → canonical field names.
+_CLAIM_FIELD_ALIASES: dict[str, str] = {
+    "claim":                    "text",
+    "challenged_claim":         "text",
+    "derivation_summary":       "text",
+    "claim_text":               "text",
+    "evidence_classification":  "evidence_type",
+    "evidence_label":           "evidence_type",
+    "epistemic_status":         "evidence_type",
+    "epistemic_label":          "evidence_type",
+}
+
+# Evidence-type aliases: LLM shorthand → canonical label.
+_EVIDENCE_TYPE_ALIASES: dict[str, str] = {
+    "exact_result":              "exact result",
+    "controlled_approximation":  "controlled approximation",
+    "numerical_evidence":        "numerical evidence",
+    "variational_assumption":    "variational assumption",
+    "phenomenological_argument": "phenomenological argument",
+}
+
+# Infrastructure failure keywords — not a scientific rejection.
+_INFRA_FAILURE_KEYWORDS = (
+    "ClientAuthenticationError",
+    "DeploymentNotFound",
+    "invalid_engine_error",
+    "BadRequest",
+    "PermissionDenied",
+    "api-version",
+    "ChainedTokenCredential",
+)
+
+# Rotating per-loop focus topics for each agent role.
+_ROTATING_FOCUS: dict[str, list[str]] = {
+    "literature_agent": [
+        "Landau level mixing bounds and perturbative corrections",
+        "PH-Pfaffian thermal Hall evidence and experimental critique",
+        "Stripe and nematic instability at large LL mixing",
+        "Quasiparticle charge and interferometry discriminants",
+        "Composite Fermi liquid and disorder phenomenology",
+    ],
+    "theory_agent": [
+        "PH symmetry derivation in the half-filled second Landau level",
+        "Finite-width perturbation to Pfaffian/anti-Pfaffian splitting",
+        "LL mixing three-body effective interaction at order kappa",
+        "Controlled approximation for the excitation gap",
+        "Effective field theory constraints on quasiparticle statistics",
+    ],
+    "falsification_agent": [
+        "Challenge thermodynamic-limit overclaims from finite-size ED",
+        "Test whether PH symmetry breaking survives disorder",
+        "Audit finite-size scaling assumptions in prior numerical claims",
+        "Challenge model-dependence in thermal Hall interpretations",
+        "Identify missing control parameter in LL mixing estimates",
+    ],
+    "experiment_bridge_agent": [
+        "Gap measurements and candidate-state compatibility",
+        "Quasiparticle charge from interferometry",
+        "Thermal Hall conductance kappa_xy and edge mode implications",
+        "Disorder and sample-quality effects on nu=5/2 plateau",
+        "Finite-width and quantum well geometry effects on observables",
+    ],
+    "knowledge_curator_agent": [
+        "Revise previously rejected claims with corrected evidence labels",
+        "Compact infrastructure-failure noise from the claim ledger",
+        "Update theory_branch_ledger with new active/deferred branches",
+        "Record unresolved assumptions from latest falsification findings",
+        "Summarize accepted claims into durable knowledge-base notes",
+    ],
+}
 
 
 class MalformedAgentOutput(ValueError):
@@ -81,7 +168,7 @@ class Director:
     ) -> dict[str, Any]:
         """Break the objective into bounded tasks using durable memory signals."""
         mode = self.run_config.mode if self.run_config else "test"
-        max_tasks = self.run_config.max_task_count if self.run_config else 4
+        max_tasks = self.run_config.max_task_count if self.run_config else 5
         memory = memory_context or {}
 
         task_specs = self._memory_aware_task_specs(objective, memory)[:max_tasks]
@@ -108,17 +195,44 @@ class Director:
             for idx, (agent_key, spec) in enumerate(task_specs, start=1)
         ]
 
+        # Build 3-phase parallel groups (Tier 2: department-meeting structure).
+        # Phase 1: gather evidence — Literature + Theory run together.
+        # Phase 2: challenge evidence — Falsification + Experiment Bridge run together.
+        # Phase 3: curate — Knowledge Curator synthesizes after Phase 1+2.
+        _PHASE1 = {"literature_agent", "theory_agent"}
+        _PHASE2 = {"falsification_agent", "experiment_bridge_agent"}
+        _PHASE3 = {"knowledge_curator_agent"}
+        phase1_ids = [t["task_id"] for t in tasks if t["agent_name"] in _PHASE1]
+        phase2_ids = [t["task_id"] for t in tasks if t["agent_name"] in _PHASE2]
+        phase3_ids = [t["task_id"] for t in tasks if t["agent_name"] in _PHASE3]
+        remaining_ids = [
+            t["task_id"] for t in tasks
+            if t["agent_name"] not in _PHASE1 | _PHASE2 | _PHASE3
+        ]
+        parallel_groups = []
+        if phase1_ids:
+            parallel_groups.append({"group_id": "phase-1-evidence-gathering", "task_ids": phase1_ids})
+        if phase2_ids:
+            parallel_groups.append({
+                "group_id": "phase-2-challenge-and-bridge",
+                "task_ids": phase2_ids,
+                "depends_on": phase1_ids,
+            })
+        if phase3_ids:
+            parallel_groups.append({
+                "group_id": "phase-3-knowledge-curation",
+                "task_ids": phase3_ids,
+                "depends_on": phase1_ids + phase2_ids,
+            })
+        if remaining_ids:
+            parallel_groups.append({"group_id": "phase-other", "task_ids": remaining_ids})
+
         return {
             "mode": mode,
             "objective": objective,
             "memory_context": memory,
             "inter_agent_dialogue_summaries": dialogue_summaries,
-            "parallel_groups": [
-                {
-                    "group_id": "planning-and-theory-subagents",
-                    "task_ids": [task["task_id"] for task in tasks],
-                }
-            ],
+            "parallel_groups": parallel_groups,
             "tasks": tasks,
         }
 
@@ -155,6 +269,71 @@ class Director:
                 raise ValueError(f"Duplicate task id: {task['task_id']}")
             seen.add(task["task_id"])
 
+    def normalize_agent_output(self, output: dict[str, Any]) -> dict[str, Any]:
+        """Pre-validation normalization: remap status aliases and normalize claims.
+
+        This is called *before* validate_agent_output so that dialect differences
+        between LLM prompt schemas and the canonical Director schema are resolved
+        without silently dropping substantive scientific content.
+        """
+        # Remap "proposed" → "partial" (Knowledge Curator non-destructive plan).
+        if output.get("status") == "proposed":
+            output = dict(output, status="partial")
+
+        # Normalize each claim in-place.
+        if isinstance(output.get("claims"), list):
+            normalized_claims = []
+            for idx, claim in enumerate(output["claims"]):
+                normalized_claims.append(
+                    self._normalize_claim(claim, task_id=output.get("task_id", "unknown"), idx=idx)
+                )
+            output = dict(output, claims=normalized_claims)
+
+        return output
+
+    @staticmethod
+    def _normalize_claim(
+        claim: dict[str, Any],
+        task_id: str = "unknown",
+        idx: int = 0,
+    ) -> dict[str, Any]:
+        """Map field aliases to canonical names and auto-fill missing claim_id."""
+        claim = dict(claim)  # shallow copy — do not mutate the original
+
+        # Remap field aliases.
+        for alias, canonical in _CLAIM_FIELD_ALIASES.items():
+            if alias in claim and canonical not in claim:
+                claim[canonical] = claim.pop(alias)
+            elif alias in claim:
+                del claim[alias]  # canonical already present; discard alias
+
+        # Auto-generate claim_id if absent or blank.
+        if not claim.get("claim_id"):
+            claim["claim_id"] = f"{task_id}-claim-{idx:03d}"
+
+        # Normalize evidence_type aliases.
+        if "evidence_type" in claim:
+            et = str(claim["evidence_type"]).strip()
+            claim["evidence_type"] = _EVIDENCE_TYPE_ALIASES.get(et, et)
+
+        # Normalize confidence aliases (case-insensitive).
+        if "confidence" in claim:
+            conf = str(claim["confidence"]).strip().lower()
+            # Accept "moderate" as "medium", discard free-text suffixes.
+            if conf.startswith("moderate") or conf.startswith("med"):
+                conf = "medium"
+            elif conf.startswith("high"):
+                conf = "high"
+            elif conf.startswith("low"):
+                conf = "low"
+            claim["confidence"] = conf
+
+        # Ensure text field has content (fall back to summary if present).
+        if not claim.get("text") and claim.get("summary"):
+            claim["text"] = claim["summary"]
+
+        return claim
+
     def validate_agent_output(self, output: dict[str, Any]) -> None:
         required = {
             "agent_name",
@@ -184,14 +363,14 @@ class Director:
         for claim in output["claims"]:
             self._validate_claim(claim)
 
+        if output.get("agent_name") == "numerics_agent":
+            self._validate_numerics_output(output)
+
         for update in output.get("branch_updates", []):
             self.validate_branch_update(update)
 
         for handoff in output.get("theory_to_numerics_handoffs", []):
             self.validate_theory_to_numerics_handoff(handoff)
-
-        if output.get("agent_name") == "numerics_agent":
-            self.validate_numerics_verification_output(output)
 
     def mark_malformed_output(
         self,
@@ -226,23 +405,36 @@ class Director:
 
         for output in outputs:
             if output.get("status") == "failed":
+                # Distinguish infrastructure failures from scientific rejections.
+                errors = " ".join(output.get("errors", []))
+                is_infra = any(kw in errors for kw in _INFRA_FAILURE_KEYWORDS)
+                failure_label = "infrastructure-failure" if is_infra else "schema-failure"
                 rejected.append(
                     {
                         "claim_id": f"{output.get('task_id')}-failed-output",
                         "text": output.get("summary", "Agent output failed."),
                         "reason": "; ".join(output.get("errors", [])) or "Agent failed.",
+                        "failure_category": failure_label,
                     }
                 )
                 continue
 
+            # Partial output salvage (Tier 2): treat valid claims as deferred.
+            is_partial = output.get("status") == "partial"
+
             for claim in output.get("claims", []):
-                disposition = self._claim_disposition(claim, output)
-                if disposition == "accepted":
-                    accepted.append(claim)
-                elif disposition == "rejected":
-                    rejected.append(claim)
-                else:
+                if is_partial:
+                    # All partial-output claims are deferred regardless of content.
+                    claim = dict(claim, _salvaged_from_partial=True)
                     deferred.append(claim)
+                else:
+                    disposition = self._claim_disposition(claim, output)
+                    if disposition == "accepted":
+                        accepted.append(claim)
+                    elif disposition == "rejected":
+                        rejected.append(claim)
+                    else:
+                        deferred.append(claim)
 
         return {
             "accepted": accepted,
@@ -266,13 +458,14 @@ class Director:
         handoffs: list[dict[str, Any]] = []
 
         for output in outputs:
-            proposed_next_tests.extend(output.get("next_actions", []))
             branch_updates.extend(output.get("branch_updates", []))
             handoffs.extend(output.get("theory_to_numerics_handoffs", []))
             for claim in output.get("claims", []):
                 limitations = claim.get("limitations")
                 if limitations:
-                    unresolved_assumptions.append(limitations)
+                    unresolved_assumptions.append(_stringify_observation(limitations))
+            for action in output.get("next_actions", []):
+                proposed_next_tests.append(_stringify_observation(action))
 
         return {
             "run_id": run_id,
@@ -442,42 +635,6 @@ class Director:
                 f"Invalid handoff evidence_label: {handoff['evidence_label']}"
             )
 
-    def validate_numerics_verification_output(self, output: dict[str, Any]) -> None:
-        program = output.get("verification_program")
-        if not isinstance(program, dict):
-            raise MalformedAgentOutput(
-                "Numerics output missing required verification_program object."
-            )
-        for field in ("description", "path", "status"):
-            if field not in program or program[field] in (None, ""):
-                raise MalformedAgentOutput(
-                    f"Numerics verification_program missing required field: {field}"
-                )
-        if program["status"] not in {"designed", "written", "executed", "reported"}:
-            raise MalformedAgentOutput(
-                f"Invalid numerics verification_program status: {program['status']}"
-            )
-
-        metadata = output.get("execution_metadata")
-        if not isinstance(metadata, dict):
-            raise MalformedAgentOutput(
-                "Numerics output missing required execution_metadata object."
-            )
-        for field in (
-            "geometry",
-            "n_particles",
-            "n_flux",
-            "shift",
-            "basis_dimension",
-            "solver",
-            "convergence_status",
-            "tolerance",
-        ):
-            if field not in metadata or metadata[field] in (None, ""):
-                raise MalformedAgentOutput(
-                    f"Numerics execution_metadata missing required field: {field}"
-                )
-
     def extract_valid_theory_handoffs(
         self,
         outputs: list[dict[str, Any]],
@@ -531,6 +688,8 @@ class Director:
         return appended
 
     def _validate_claim(self, claim: dict[str, Any]) -> None:
+        if "claim_id" not in claim:
+            claim["claim_id"] = f"auto-{hash(claim.get('text', '')) % 10000}"
         for field in (
             "claim_id",
             "text",
@@ -553,6 +712,13 @@ class Director:
         if claim["confidence"] not in {"low", "medium", "high"}:
             raise MalformedAgentOutput(
                 f"Invalid confidence '{claim['confidence']}'."
+            )
+
+    def _validate_numerics_output(self, output: dict[str, Any]) -> None:
+        report = output.get("calculation_report")
+        if not isinstance(report, str) or not report.strip():
+            raise MalformedAgentOutput(
+                "Numerics output must include a non-empty natural-language calculation_report."
             )
 
     @staticmethod
@@ -599,7 +765,7 @@ class Director:
             ]
         )
 
-        return [
+        agent_specs = [
             (
                 "literature_agent",
                 self._build_task_spec(
@@ -627,6 +793,7 @@ class Director:
                         "A table separating author claims from validated project evidence.",
                         "Follow-up reading tasks tied to unresolved durable-memory items.",
                     ),
+                    loop_index=0,
                 ),
             ),
             (
@@ -655,6 +822,7 @@ class Director:
                         "Explicit assumptions for finite width, LL mixing, disorder, or spin.",
                         "One falsifiable consequence for the next loop.",
                     ),
+                    loop_index=1,
                 ),
             ),
             (
@@ -683,6 +851,7 @@ class Director:
                         "Severity for each failure mode.",
                         "A concrete next test with required inputs and pass/fail signal.",
                     ),
+                    loop_index=2,
                 ),
             ),
             (
@@ -711,6 +880,7 @@ class Director:
                         "Compatibility notes with explicit uncertainty classification.",
                         "One theory-experiment check for the next loop.",
                     ),
+                    loop_index=3,
                 ),
             ),
             (
@@ -739,9 +909,11 @@ class Director:
                         "Claim IDs to add, revise, defer, or reject.",
                         "Revision rationale preserving prior conclusions and falsification findings.",
                     ),
+                    loop_index=4,
                 ),
             ),
         ]
+        return agent_specs
 
     def _build_task_spec(
         self,
@@ -754,6 +926,7 @@ class Director:
         source_kinds: tuple[str, ...],
         triggers: list[str],
         deliverables: tuple[str, ...],
+        loop_index: int = 0,
     ) -> dict[str, Any]:
         config = self.agent_configs.get(agent_key, {})
         role = config.get("role", fallback_role)
@@ -790,6 +963,7 @@ class Director:
                 role=role,
                 allowed_inputs=allowed_inputs,
                 expected_outputs=expected_outputs,
+                loop_index=loop_index,
             ),
             "source_refs": source_refs,
             "bounded_deliverables": list(deliverables),
@@ -803,10 +977,18 @@ class Director:
         role: str,
         allowed_inputs: tuple[str, ...],
         expected_outputs: tuple[str, ...],
+        loop_index: int = 0,
     ) -> list[str]:
         config = self.agent_configs.get(agent_key, {})
+        # Select rotating focus topic for this agent.
+        focus_topics = _ROTATING_FOCUS.get(agent_key, [])
+        focus_hint = (
+            f" Today's focus rotation: {focus_topics[loop_index % len(focus_topics)]}"
+            if focus_topics
+            else ""
+        )
         instructions = [
-            f"Act as {role}. Scope: {config.get('scope', 'Execute the assigned bounded research task.')}",
+            f"Act as {role}. Scope: {config.get('scope', 'Execute the assigned bounded research task.')}{focus_hint}",
             "Treat Pfaffian, anti-Pfaffian, PH-Pfaffian, CFL, stripe/nematic, and other candidates as hypotheses.",
             "Every claim must use exactly one allowed evidence_type label and include support, limitations, and confidence.",
             "Do not present finite-size numerical evidence as thermodynamic proof.",
@@ -821,8 +1003,17 @@ class Director:
             instructions.append(
                 "Escalate or mark partial/failed when: " + "; ".join(escalation)
             )
+        # Embed canonical schema as a concrete JSON block so LLMs know exactly
+        # which field names and values are required. This is the single source of
+        # truth for the schema contract.
+        schema_block = json.dumps(AGENT_OUTPUT_SCHEMA, indent=2)
         instructions.append(
-            "Return only schema-valid JSON with agent_name, agent_role, task_id, run_id, mode, status, summary, claims, artifacts, errors, next_actions, and optional branch_updates plus theory_to_numerics_handoffs."
+            "REQUIRED OUTPUT SCHEMA (return JSON matching this exactly):\n"
+            + schema_block
+            + "\n"
+            "Each claim must use canonical field names: claim_id, text, evidence_type, "
+            "support, limitations, confidence. Do NOT use aliases such as 'claim', "
+            "'challenged_claim', 'derivation_summary', 'evidence_classification', etc."
         )
         return instructions
 
@@ -836,11 +1027,10 @@ class Director:
         config = self.agent_configs.get("numerics_agent", {})
         role = config.get("role", "Numerics Agent")
         deliverables = (
-            "Design the smallest verification program that tests the supplied theory artifact.",
-            "Write or identify the executable recipe/program and record the artifact path.",
-            "Execute the bounded verification when allowed by mode and budget.",
-            "Report geometry, particle number, flux, shift, basis size, solver, convergence, tolerance, and limitations.",
-            "Label every conclusion as finite-size numerical evidence, exact finite-Hamiltonian result, or another allowed evidence label.",
+            "Run or describe the bounded calculation that addresses the supplied theory artifact.",
+            "Write a concise Markdown calculation report as the primary artifact.",
+            "Include enough method, inputs, outputs, and caveats for a reviewer agent to interpret the result.",
+            "Label any conclusion with an allowed evidence label without claiming thermodynamic proof from finite calculations.",
         )
         command = (
             f"{role} gated command: advance '{objective}' only through Director "
@@ -861,8 +1051,7 @@ class Director:
                 "durable_memory_context",
             ),
             expected_outputs=(
-                "verification_program",
-                "simulation_result",
+                "calculation_report",
                 "claims",
                 "artifacts",
             ),
@@ -878,8 +1067,7 @@ class Director:
                         "durable_memory_context",
                     ),
                     expected_outputs=(
-                        "verification_program",
-                        "simulation_result",
+                        "calculation_report",
                         "claims",
                         "artifacts",
                     ),
@@ -949,6 +1137,19 @@ def _compose_daily_loop_command(
         f"Bounded deliverables: {deliverable_list}. Do not mutate GitHub or "
         "knowledge-base files from this subagent task; propose updates as artifacts."
     )
+
+
+def _stringify_observation(value: Any) -> str:
+    if isinstance(value, str):
+        return sanitize_text(value).strip()
+    if isinstance(value, Mapping):
+        try:
+            return sanitize_text(
+                json.dumps(value, sort_keys=True, ensure_ascii=False)
+            ).strip()
+        except TypeError:
+            return sanitize_text(str(value)).strip()
+    return sanitize_text(str(value)).strip()
 
 
 def _compact_triggers(values: list[Any]) -> list[str]:

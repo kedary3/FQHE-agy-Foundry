@@ -80,6 +80,8 @@ class DailyLoopRunner:
         validated_outputs = []
         for output in outputs:
             task = _task_by_id(task_graph, output.get("task_id"))
+            # Normalize before validation — fixes dialect mismatches (Tier 1).
+            output = director.normalize_agent_output(output)
             try:
                 director.validate_agent_output(output)
                 validated_outputs.append(output)
@@ -112,6 +114,8 @@ class DailyLoopRunner:
             ledger.sort(key=lambda item: item.get("task_id", ""))
             for output in numerics_outputs:
                 task = _task_by_id(task_graph, output.get("task_id"))
+                # Normalize before validation (Tier 1).
+                output = director.normalize_agent_output(output)
                 try:
                     director.validate_agent_output(output)
                     validated_outputs.append(output)
@@ -545,38 +549,27 @@ def _fixture_agent_output(task: dict[str, Any]) -> dict[str, Any]:
     if task["agent_name"] == "numerics_agent":
         handoff = task.get("theory_to_numerics_handoff", {})
         output["summary"] = (
-            "Completed deterministic gated Numerics Agent fixture task for "
+            "Completed deterministic gated Numerics Agent calculation report for "
             f"handoff `{handoff.get('handoff_id', 'unknown')}`."
         )
         output["claims"][0]["text"] = (
             "The gated numerics fixture verifies that a Director-approved theory "
-            "handoff can produce a bounded finite-size verification report; it is "
+            "handoff can produce a bounded finite-size calculation report; it is "
             "not thermodynamic ν=5/2 evidence."
         )
         output["artifacts"] = [
             {
-                "path": "simulations/results/result_example_laughlin.json",
-                "type": "simulation_output",
+                "path": "agent_outputs/calculation_report.md",
+                "type": "markdown",
             }
         ]
-        output["verification_program"] = {
-            "description": (
-                "Use the existing deterministic Laughlin fixture result as the "
-                "bounded verification program for orchestration plumbing."
-            ),
-            "path": "simulations/results/result_example_laughlin.json",
-            "status": "reported",
-        }
-        output["execution_metadata"] = {
-            "geometry": "sphere",
-            "n_particles": 3,
-            "n_flux": 6,
-            "shift": 3,
-            "basis_dimension": 5,
-            "solver": "scipy.sparse.linalg.eigsh",
-            "convergence_status": "success",
-            "tolerance": 1e-10,
-        }
+        output["calculation_report"] = (
+            "# Numerics calculation report\n\n"
+            "A bounded deterministic fixture calculation was reviewed for "
+            "orchestration plumbing. The Laughlin N=3, N_flux=6 fixture is a "
+            "finite-size sanity check only; interpretation is left to the "
+            "reviewing agent."
+        )
 
     return output
 

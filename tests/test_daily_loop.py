@@ -142,6 +142,10 @@ def test_memory_collector_reads_durable_artifacts_and_github_issue_state(tmp_pat
         json.dumps([{"task_id": "test-01-literature_agent", "status": "failed"}]),
         encoding="utf-8",
     )
+    (run_dir / "task_graph.json").write_text(
+        json.dumps({"tasks": [], "parallel_groups": []}),
+        encoding="utf-8",
+    )
     (run_dir / "validation_summary.json").write_text(
         json.dumps({"status": "success"}),
         encoding="utf-8",
@@ -156,6 +160,10 @@ def test_memory_collector_reads_durable_artifacts_and_github_issue_state(tmp_pat
                 "next_actions": ["Repair literature schema."],
             }
         ),
+        encoding="utf-8",
+    )
+    (run_dir / "daily_report.md").write_text(
+        "# Daily Research Loop Report\n\n## Recommended next loop\n- Repair literature schema.\n",
         encoding="utf-8",
     )
 
@@ -217,6 +225,48 @@ def test_memory_collector_reads_durable_artifacts_and_github_issue_state(tmp_pat
     assert memory["theory_branch_digest"][0]["status"] == "pruned"
     assert memory["theory_branch_digest"][0]["revival_criteria"]
     assert "ghp_secretvalue" not in json.dumps(memory)
+
+
+def test_memory_collector_skips_incomplete_production_runs(tmp_path):
+    complete_run = tmp_path / "artifacts" / "production" / "20260606-010000-production-aaaa1111"
+    incomplete_run = tmp_path / "artifacts" / "production" / "20260606-020000-production-bbbb2222"
+
+    for run_dir in (complete_run, incomplete_run):
+        (run_dir / "agent_outputs").mkdir(parents=True)
+
+    (complete_run / "run_summary.json").write_text(
+        json.dumps(
+            {
+                "run_id": "20260606-010000-production-aaaa1111",
+                "mode": "production",
+                "status": "completed",
+                "validation_status": "success",
+                "task_count": 5,
+                "agent_statuses": {},
+                "failures": [],
+                "warnings": [],
+            }
+        ),
+        encoding="utf-8",
+    )
+    (complete_run / "task_graph.json").write_text("{}", encoding="utf-8")
+    (complete_run / "task_ledger.json").write_text("[]", encoding="utf-8")
+    (complete_run / "validation_summary.json").write_text(
+        json.dumps({"status": "success"}),
+        encoding="utf-8",
+    )
+    (complete_run / "daily_report.md").write_text("# report", encoding="utf-8")
+
+    (incomplete_run / "agent_outputs" / "production-01-literature_agent.json").write_text(
+        json.dumps({"status": "failed", "task_id": "production-01-literature_agent"}),
+        encoding="utf-8",
+    )
+
+    memory = DurableMemoryCollector(workspace_path=tmp_path, mode="production").collect()
+
+    recent_runs = memory["sources"]["recent_runs"]
+    assert [run["run_id"] for run in recent_runs] == ["20260606-010000-production-aaaa1111"]
+    assert "bbbb2222" not in json.dumps(memory)
 
 
 def test_director_generates_memory_aware_daily_commands():
@@ -358,25 +408,39 @@ def test_pruned_branch_update_requires_revival_criteria():
         )
 
 
-def test_numerics_output_requires_verification_program_metadata():
+def test_numerics_output_accepts_open_ended_calculation_report():
     director = Director(run_config=DailyTestRunConfig())
 
-    with pytest.raises(MalformedAgentOutput, match="verification_program"):
-        director.validate_agent_output(
-            {
-                "agent_name": "numerics_agent",
-                "agent_role": "Numerics Agent",
-                "task_id": "numerics",
-                "run_id": "run",
-                "mode": "test",
-                "status": "success",
-                "summary": "Missing verification metadata.",
-                "claims": [],
-                "artifacts": [],
-                "errors": [],
-                "next_actions": [],
-            }
-        )
+    director.validate_agent_output(
+        {
+            "agent_name": "numerics_agent",
+            "agent_role": "Numerics Agent",
+            "task_id": "numerics",
+            "run_id": "run",
+            "mode": "test",
+            "status": "success",
+            "summary": "Wrote a small calculation report for reviewer interpretation.",
+            "claims": [
+                {
+                    "claim_id": "numerics-open-report",
+                    "text": "The finite calculation produced a bounded report.",
+                    "evidence_type": "numerical evidence",
+                    "support": "The report describes the calculation and caveats.",
+                    "limitations": "A reviewer agent must interpret the result.",
+                    "confidence": "medium",
+                }
+            ],
+            "artifacts": [
+                {
+                    "path": "agent_outputs/calculation_report.md",
+                    "type": "markdown",
+                }
+            ],
+            "errors": [],
+            "next_actions": [],
+            "calculation_report": "# Calculation\n\nOpen-ended numerical report.",
+        }
+    )
 
 
 def test_parallel_runner_executes_mock_agents_concurrently(tmp_path):
@@ -447,6 +511,49 @@ def test_malformed_subagent_output_is_rejected():
 
     with pytest.raises(MalformedAgentOutput, match="Invalid evidence_type"):
         director.validate_agent_output(output)
+
+
+def test_director_synthesis_stringifies_non_scalar_assumptions():
+    director = Director(run_config=DailyTestRunConfig())
+    task_graph = director.generate_daily_plan("Check synthesis normalization.")
+    outputs = [
+        {
+            "agent_name": "theory_agent",
+            "agent_role": "Theory Agent",
+            "task_id": "test-02-theory_agent",
+            "run_id": "run",
+            "mode": "test",
+            "status": "success",
+            "summary": "Theory output.",
+            "claims": [
+                {
+                    "claim_id": "claim-1",
+                    "text": "A claim.",
+                    "evidence_type": "controlled approximation",
+                    "support": "Support.",
+                    "limitations": {"kind": "finite-size", "detail": "Needs scaling."},
+                    "confidence": "medium",
+                }
+            ],
+            "artifacts": [],
+            "errors": [],
+            "next_actions": [{"task": "Re-run", "reason": "Need more data."}],
+        }
+    ]
+
+    synthesis = director.synthesize(
+        run_id="run",
+        mode="test",
+        objective="Check synthesis normalization.",
+        task_graph=task_graph,
+        outputs=outputs,
+        validation_summary={"status": "success"},
+    )
+
+    assert synthesis["scientific_status"]["unresolved_assumptions"]
+    assert isinstance(synthesis["scientific_status"]["unresolved_assumptions"][0], str)
+    assert synthesis["scientific_status"]["proposed_next_tests"]
+    assert isinstance(synthesis["scientific_status"]["proposed_next_tests"][0], str)
 
 
 def test_daily_report_and_summary_are_generated_in_test_mode(tmp_path):

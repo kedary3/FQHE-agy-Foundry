@@ -153,6 +153,8 @@ class DurableMemoryCollector:
         ]
         runs = []
         for run_dir in run_dirs:
+            if not self._is_complete_run_dir(run_dir):
+                continue
             run_summary_data = self._read_json(run_dir / "run_summary.json")
             validation_data = self._read_json(run_dir / "validation_summary.json")
             run_summary = run_summary_data if isinstance(run_summary_data, dict) else {}
@@ -187,6 +189,17 @@ class DurableMemoryCollector:
             )
             self._merge_run_signals(context, summary, task_ledger)
         context["sources"]["recent_runs"] = runs
+
+    @staticmethod
+    def _is_complete_run_dir(run_dir: Path) -> bool:
+        required = (
+            "run_summary.json",
+            "task_graph.json",
+            "task_ledger.json",
+            "validation_summary.json",
+            "daily_report.md",
+        )
+        return all((run_dir / name).exists() for name in required)
 
     def _collect_simulation_artifacts(self, context: dict[str, Any]) -> None:
         simulations_root = self.workspace_path / "simulations"
